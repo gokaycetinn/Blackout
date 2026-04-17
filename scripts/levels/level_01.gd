@@ -8,6 +8,11 @@ const AMMO_SCENE := preload("res://scenes/items/ammo.tscn")
 const HIDING_SPOT_SCENE := preload("res://scenes/objects/hiding_spot.tscn")
 const EXIT_DOOR_SCENE := preload("res://scenes/objects/door_exit.tscn")
 const LIGHT_SOURCE_SCENE := preload("res://scenes/objects/light_source.tscn")
+const FACILITY_COMPUTERS = preload("res://assets/sci-fi-facility-asset-pack/computer_spritesheet.png")
+const FACILITY_CRATES = preload("res://assets/sci-fi-facility-asset-pack/crates_spritesheet.png")
+const FACILITY_DOODADS = preload("res://assets/sci-fi-facility-asset-pack/doodads_spritesheet.png")
+const FACILITY_SCREEN = preload("res://assets/sci-fi-facility-asset-pack/computer_screen_large.png")
+const FACILITY_NOTICE = preload("res://assets/sci-fi-facility-asset-pack/guard_notice.png")
 
 const MAP_WIDTH := 1600.0
 const MAP_HEIGHT := 960.0
@@ -32,7 +37,7 @@ var _tileset: TileSet
 func _ready() -> void:
 	GameManager.reset_run()
 	GameManager.register_level(self)
-	GameManager.gunshot_fired.connect(_on_gunshot_fired)
+	GameManager.screen_shake_requested.connect(_on_screen_shake)
 	_setup_tile_layers()
 	_build_floor()
 	_build_walls()
@@ -47,14 +52,21 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	# Let Camera2D's built-in position_smoothing follow the player.
+	# We just update offset for trauma/tension shake.
 	if player:
-		camera.global_position = camera.global_position.lerp(player.global_position, minf(delta * 4.0, 1.0))
+		camera.global_position = camera.global_position.lerp(
+			player.global_position, clampf(delta * 6.0, 0.0, 1.0)
+		)
 	AudioManager.set_tension_level(GameManager.current_detection / 100.0)
-	_camera_trauma = maxf(_camera_trauma - delta * 1.8, 0.0)
-	var tension_jitter := GameManager.current_detection / 100.0 * 2.2
+	_camera_trauma = maxf(_camera_trauma - delta * 2.2, 0.0)
+	# Smooth oscillating shake — not jarring random every frame
+	var t := Time.get_ticks_msec() / 1000.0
+	var trauma_sq := _camera_trauma * _camera_trauma
+	var tension_drift := GameManager.current_detection / 100.0 * 1.4
 	camera.offset = _camera_base_offset + Vector2(
-		randf_range(-1.0, 1.0) * (_camera_trauma * 10.0 + tension_jitter),
-		randf_range(-1.0, 1.0) * (_camera_trauma * 8.0 + tension_jitter)
+		sin(t * 18.0 + 0.3) * trauma_sq * 9.0 + sin(t * 3.1) * tension_drift,
+		cos(t * 14.0 - 0.7) * trauma_sq * 7.0 + cos(t * 2.7) * tension_drift
 	)
 
 
@@ -145,7 +157,9 @@ func _spawn_player() -> void:
 	player = PLAYER_SCENE.instantiate()
 	player.global_position = Vector2(120, 200)
 	world.add_child(player)
+	# Snap camera to player immediately, then let position_smoothing take over
 	camera.global_position = player.global_position
+	camera.position_smoothing_enabled = true
 
 
 func _spawn_lights() -> void:
@@ -153,32 +167,44 @@ func _spawn_lights() -> void:
 		{
 			"position": Vector2(170, 160),
 			"color": Color(0.78, 0.88, 1.0, 1.0),
-			"energy": 0.45,
-			"flicker": true
+			"energy": 1.75,
+			"flicker": false
 		},
 		{
 			"position": Vector2(570, 170),
 			"color": Color(0.85, 0.92, 1.0, 1.0),
-			"energy": 0.7,
-			"flicker": true
+			"energy": 1.9,
+			"flicker": false
 		},
 		{
 			"position": Vector2(1170, 170),
 			"color": Color(1.0, 0.2, 0.18, 1.0),
-			"energy": 0.55,
+			"energy": 1.75,
 			"flicker": false
 		},
 		{
 			"position": Vector2(420, 690),
 			"color": Color(0.95, 0.35, 0.2, 1.0),
-			"energy": 0.55,
-			"flicker": true
+			"energy": 1.75,
+			"flicker": false
 		},
 		{
 			"position": Vector2(820, 580),
 			"color": Color(0.8, 0.95, 1.0, 1.0),
-			"energy": 0.65,
-			"flicker": true
+			"energy": 1.9,
+			"flicker": false
+		},
+		{
+			"position": Vector2(1315, 700),
+			"color": Color(0.7, 0.96, 1.0, 1.0),
+			"energy": 1.85,
+			"flicker": false
+		},
+		{
+			"position": Vector2(700, 760),
+			"color": Color(0.68, 0.9, 1.0, 1.0),
+			"energy": 1.65,
+			"flicker": false
 		}
 	]
 
@@ -217,25 +243,51 @@ func _spawn_exit() -> void:
 
 
 func _spawn_enemies() -> void:
-	var enemy_one = CREATURE_SCENE.instantiate()
-	enemy_one.global_position = Vector2(555, 230)
-	enemy_one.set("patrol_points", [
-		Vector2(470, 170),
-		Vector2(635, 175),
-		Vector2(625, 360),
-		Vector2(470, 360)
-	])
-	enemies_root.add_child(enemy_one)
+	var enemy_specs := [
+		{
+			"position": Vector2(555, 230),
+			"patrol": [Vector2(470, 160), Vector2(650, 165), Vector2(640, 360), Vector2(468, 355)],
+			"patrol_speed": 46.0,
+			"chase_speed": 132.0,
+			"view_distance": 145.0,
+			"attack_range": 14.0
+		},
+		{
+			"position": Vector2(905, 625),
+			"patrol": [Vector2(800, 630), Vector2(965, 630), Vector2(965, 825), Vector2(800, 825)],
+			"patrol_speed": 49.0,
+			"chase_speed": 140.0,
+			"view_distance": 152.0,
+			"attack_range": 15.0
+		},
+		{
+			"position": Vector2(1280, 250),
+			"patrol": [Vector2(1100, 180), Vector2(1390, 185), Vector2(1390, 390), Vector2(1100, 390)],
+			"patrol_speed": 45.0,
+			"chase_speed": 145.0,
+			"view_distance": 155.0,
+			"attack_range": 14.0
+		},
+		{
+			"position": Vector2(200, 700),
+			"patrol": [Vector2(95, 620), Vector2(320, 625), Vector2(310, 820), Vector2(95, 820)],
+			"patrol_speed": 42.0,
+			"chase_speed": 128.0,
+			"view_distance": 140.0,
+			"attack_range": 13.0
+		}
+	]
 
-	var enemy_two = CREATURE_SCENE.instantiate()
-	enemy_two.global_position = Vector2(905, 625)
-	enemy_two.set("patrol_points", [
-		Vector2(805, 635),
-		Vector2(960, 635),
-		Vector2(960, 820),
-		Vector2(805, 820)
-	])
-	enemies_root.add_child(enemy_two)
+	for spec in enemy_specs:
+		var enemy = CREATURE_SCENE.instantiate()
+		enemy.global_position = spec["position"]
+		enemy.set("patrol_points", spec["patrol"])
+		enemy.set("patrol_speed", spec["patrol_speed"])
+		enemy.set("chase_speed", spec["chase_speed"])
+		enemy.set("base_view_distance", spec["view_distance"])
+		enemy.set("attack_range", spec["attack_range"])
+		enemies_root.add_child(enemy)
+
 
 
 func _populate_environment() -> void:
@@ -258,6 +310,21 @@ func _populate_environment() -> void:
 	_add_decal(Rect2(548, 312, 62, 28), Color(0.35, 0.08, 0.08, 0.35))
 	_add_decal(Rect2(879, 742, 54, 20), Color(0.3, 0.05, 0.05, 0.28))
 	_add_decal(Rect2(1312, 190, 40, 18), Color(0.16, 0.2, 0.3, 0.22))
+	_add_facility_screen(Vector2(210, 168), Color(0.5, 1.0, 0.92, 0.95))
+	_add_facility_screen(Vector2(570, 168), Color(0.48, 0.82, 1.0, 0.92))
+	_add_facility_screen(Vector2(1190, 168), Color(1.0, 0.45, 0.3, 0.9))
+	_add_facility_notice(Vector2(1092, 156))
+	_add_facility_notice(Vector2(690, 516))
+	_add_facility_sprite(Vector2(257, 150), FACILITY_COMPUTERS, Rect2i(0, 0, 16, 16), 2.0)
+	_add_facility_sprite(Vector2(530, 138), FACILITY_COMPUTERS, Rect2i(16, 0, 16, 16), 2.0)
+	_add_facility_sprite(Vector2(1186, 138), FACILITY_COMPUTERS, Rect2i(32, 0, 16, 16), 2.0)
+	_add_facility_sprite(Vector2(334, 690), FACILITY_CRATES, Rect2i(0, 0, 16, 16), 2.1)
+	_add_facility_sprite(Vector2(442, 660), FACILITY_CRATES, Rect2i(16, 0, 16, 16), 2.1)
+	_add_facility_sprite(Vector2(714, 522), FACILITY_CRATES, Rect2i(32, 0, 16, 16), 2.1)
+	_add_facility_sprite(Vector2(830, 566), FACILITY_CRATES, Rect2i(48, 0, 16, 16), 2.1)
+	_add_facility_sprite(Vector2(1210, 662), FACILITY_COMPUTERS, Rect2i(48, 0, 16, 16), 2.0)
+	_add_facility_sprite(Vector2(1262, 752), FACILITY_DOODADS, Rect2i(16, 0, 16, 16), 2.0, Color(1.0, 0.95, 0.95, 0.92))
+	_add_facility_sprite(Vector2(854, 744), FACILITY_DOODADS, Rect2i(48, 16, 16, 16), 1.8, Color(0.76, 1.0, 0.78, 0.9))
 
 
 func _add_room_border(room: Rect2, border_color: Color) -> void:
@@ -354,8 +421,48 @@ func _add_decal(rect: Rect2, color: Color) -> void:
 	world.add_child(decal)
 
 
-func _on_gunshot_fired(_position: Vector2) -> void:
-	_camera_trauma = minf(_camera_trauma + 1.0, 1.2)
+func _add_facility_screen(position: Vector2, tint: Color) -> void:
+	var screen: Sprite2D = Sprite2D.new()
+	screen.texture = FACILITY_SCREEN
+	screen.position = position
+	screen.centered = true
+	screen.scale = Vector2.ONE * 0.34
+	screen.modulate = tint
+	screen.z_index = 1
+	world.add_child(screen)
+
+
+func _add_facility_notice(position: Vector2) -> void:
+	var sign: Sprite2D = Sprite2D.new()
+	sign.texture = FACILITY_NOTICE
+	sign.position = position
+	sign.centered = true
+	sign.scale = Vector2.ONE * 1.8
+	sign.modulate = Color(1.0, 0.92, 0.92, 0.95)
+	sign.z_index = 1
+	world.add_child(sign)
+
+
+func _add_facility_sprite(position: Vector2, texture: Texture2D, region_rect: Rect2i, scale_factor: float, tint: Color = Color(1.0, 1.0, 1.0, 1.0)) -> void:
+	var sprite: Sprite2D = Sprite2D.new()
+	sprite.texture = _create_atlas_texture(texture, region_rect)
+	sprite.position = position
+	sprite.centered = true
+	sprite.scale = Vector2.ONE * scale_factor
+	sprite.modulate = tint
+	sprite.z_index = 1
+	world.add_child(sprite)
+
+
+func _create_atlas_texture(texture: Texture2D, region_rect: Rect2i) -> AtlasTexture:
+	var atlas: AtlasTexture = AtlasTexture.new()
+	atlas.atlas = texture
+	atlas.region = Rect2(region_rect.position, region_rect.size)
+	return atlas
+
+
+func _on_screen_shake(intensity: float) -> void:
+	_camera_trauma = minf(_camera_trauma + intensity, 1.6)
 
 
 func _setup_tile_layers() -> void:

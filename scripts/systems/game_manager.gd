@@ -13,6 +13,7 @@ signal hide_state_changed(hidden: bool)
 signal pause_changed(paused: bool)
 signal global_noise_emitted(position: Vector2, strength: float)
 signal gunshot_fired(position: Vector2)
+signal screen_shake_requested(intensity: float)
 
 const LEVEL_SCENE := "res://scenes/levels/level_01.tscn"
 const MENU_SCENE := "res://scenes/ui/main_menu.tscn"
@@ -176,6 +177,12 @@ func emit_noise(position: Vector2, strength: float) -> void:
 func emit_gunshot(position: Vector2) -> void:
 	gunshot_fired.emit(position)
 	emit_noise(position, 900.0)
+	request_screen_shake(0.85)
+
+
+func request_screen_shake(intensity: float) -> void:
+	screen_shake_requested.emit(clampf(intensity, 0.0, 2.0))
+
 
 
 func request_game_over(reason: String = "The creatures found you.") -> void:

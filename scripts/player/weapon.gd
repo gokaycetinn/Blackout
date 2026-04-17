@@ -1,9 +1,9 @@
 extends Node2D
 
-@export var cooldown: float = 1.2
+@export var cooldown: float = 0.22
 @export var bullet_range: float = 420.0
 @export var damage: int = 1
-@export var spread_degrees: float = 1.75
+@export var spread_degrees: float = 1.1
 
 @onready var muzzle_flash: PointLight2D = $MuzzleFlash
 
@@ -36,7 +36,7 @@ func try_fire() -> bool:
 		return false
 
 	_cooldown_left = cooldown
-	_flash_timer = 0.1
+	_flash_timer = 0.08
 	muzzle_flash.enabled = true
 	AudioManager.play_sfx("gunshot", global_position)
 	GameManager.emit_gunshot(global_position)
@@ -67,7 +67,7 @@ func _spawn_tracer(start_point: Vector2, end_point: Vector2) -> void:
 	tracer.top_level = true
 	tracer.z_index = 12
 	tracer.default_color = Color(1.0, 0.72, 0.38, 0.9)
-	tracer.width = 2.4
+	tracer.width = 2.8
 	tracer.points = PackedVector2Array([start_point, end_point])
 	get_tree().current_scene.add_child(tracer)
 

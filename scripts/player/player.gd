@@ -1,10 +1,11 @@
 extends CharacterBody2D
 
 const PrototypeArt = preload("res://scripts/systems/prototype_art.gd")
+const PLAYER_SPRITESHEET = preload("res://assets/sci-fi-facility-asset-pack/the_kid_spritesheet.png")
 
-@export var walk_speed: float = 120.0
-@export var run_speed: float = 200.0
-@export var crouch_speed: float = 60.0
+@export var walk_speed: float = 130.0
+@export var run_speed: float = 210.0
+@export var crouch_speed: float = 65.0
 
 @onready var body_visual: Sprite2D = $Body
 @onready var facing_marker: Sprite2D = $FacingMarker
@@ -18,10 +19,20 @@ var is_hidden: bool = false
 var current_hiding_spot = null
 var _interaction_candidates: Array[Area2D] = []
 var _footstep_timer: float = 0.0
+var _base_body_scale: Vector2 = Vector2.ONE * 1.7
+
+# Invincibility frames after being hit
+var _invincible_timer: float = 0.0
+const INVINCIBLE_DURATION := 1.2
+
+# Visual feedback
+var _hurt_flash_timer: float = 0.0
+var _bob_phase: float = 0.0
 
 
 func _ready() -> void:
-	body_visual.texture = PrototypeArt.create_player_texture()
+	body_visual.texture = _create_frame_texture(PLAYER_SPRITESHEET, Rect2i(16, 0, 16, 16))
+	body_visual.scale = _base_body_scale
 	facing_marker.texture = PrototypeArt.create_rect_texture(Vector2i(12, 6), Color(0.92, 0.66, 0.28, 0.95))
 	GameManager.register_player(self)
 	interact_area.area_entered.connect(_on_interact_area_entered)
@@ -35,6 +46,10 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 
+	_invincible_timer = maxf(_invincible_timer - delta, 0.0)
+	_hurt_flash_timer = maxf(_hurt_flash_timer - delta, 0.0)
+
+	# Aim at mouse
 	var mouse_world := get_global_mouse_position()
 	var aim_direction := mouse_world - global_position
 	if aim_direction.length_squared() > 0.0001:
@@ -45,6 +60,7 @@ func _physics_process(delta: float) -> void:
 		flashlight.aim_at(mouse_world)
 		weapon_mount.aim_at(mouse_world)
 
+	# Input
 	if Input.is_action_just_pressed("toggle_flashlight"):
 		flashlight.toggle_flashlight()
 	if Input.is_action_just_pressed("crouch") and not is_hidden:
@@ -52,14 +68,16 @@ func _physics_process(delta: float) -> void:
 		_update_visual_state()
 	if Input.is_action_just_pressed("interact"):
 		_use_interactable()
-	if Input.is_action_just_pressed("fire"):
+	if Input.is_action_pressed("fire"):
 		weapon_mount.try_fire()
 
+	# Hidden — no movement
 	if is_hidden:
 		velocity = Vector2.ZERO
 		move_and_slide()
 		return
 
+	# Movement
 	var input_vector := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	var movement_mode := "idle"
 	var speed := walk_speed
@@ -77,6 +95,17 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	_handle_footsteps(delta, movement_mode)
 	_refresh_interact_prompt()
+	_update_hurt_visual()
+
+	# Subtle body bob while moving
+	if movement_mode != "idle":
+		_bob_phase += delta * (14.0 if movement_mode == "run" else 8.0)
+		body_visual.scale = Vector2(
+			_base_body_scale.x * (1.0 + sin(_bob_phase) * 0.03),
+			_base_body_scale.y * (1.0 + cos(_bob_phase * 2.0) * 0.02)
+		)
+	else:
+		body_visual.scale = body_visual.scale.lerp(_base_body_scale, 0.2)
 
 
 func _handle_footsteps(delta: float, movement_mode: String) -> void:
@@ -90,31 +119,31 @@ func _handle_footsteps(delta: float, movement_mode: String) -> void:
 
 	match movement_mode:
 		"run":
-			_footstep_timer = 0.3
-			GameManager.emit_noise(global_position, 320.0)
+			_footstep_timer = 0.28
+			GameManager.emit_noise(global_position, 340.0)
 		"crouch":
-			_footstep_timer = 0.8
-			GameManager.emit_noise(global_position, 60.0)
+			_footstep_timer = 0.85
+			GameManager.emit_noise(global_position, 55.0)
 		_:
-			_footstep_timer = 0.5
-			GameManager.emit_noise(global_position, 140.0)
+			_footstep_timer = 0.48
+			GameManager.emit_noise(global_position, 130.0)
 
 	AudioManager.play_footstep(movement_mode)
 
 
 func get_visibility_multiplier() -> float:
 	if is_hidden:
-		return 0.05
+		return 0.04
 
 	var visibility := 1.0
 	if is_crouching:
-		visibility *= 0.5
+		visibility *= 0.45
 	if flashlight.is_active():
-		visibility *= 2.0
+		visibility *= 2.2
 	else:
-		visibility *= 0.7
+		visibility *= 0.65
 	if velocity.length() < 1.0 and not flashlight.is_active():
-		visibility *= 0.3
+		visibility *= 0.28
 	return visibility
 
 
@@ -145,6 +174,13 @@ func exit_hide() -> void:
 
 
 func apply_damage() -> void:
+	# Invincibility frames — no repeated damage within window
+	if _invincible_timer > 0.0:
+		return
+	_invincible_timer = INVINCIBLE_DURATION
+	_hurt_flash_timer = 0.35
+	# Screen shake via game manager
+	GameManager.request_screen_shake(1.0)
 	GameManager.request_game_over("A creature tore through the darkness.")
 
 
@@ -199,11 +235,22 @@ func _refresh_interact_prompt() -> void:
 
 
 func _update_visual_state() -> void:
-	var body_modulate := Color(0.78, 0.92, 0.82, 0.25 if is_hidden else 1.0)
-	body_visual.modulate = body_modulate
-
-	var marker_modulate := Color(0.95, 0.72, 0.32, 0.3 if is_hidden else 1.0)
-	facing_marker.modulate = marker_modulate
-
+	var body_alpha := 0.18 if is_hidden else 1.0
+	body_visual.modulate = Color(0.78, 0.92, 0.82, body_alpha)
+	facing_marker.modulate = Color(0.95, 0.72, 0.32, 0.3 if is_hidden else 1.0)
 	stealth_indicator.visible = is_crouching or is_hidden
 	stealth_indicator.color = Color(0.4, 0.9, 0.6, 0.8) if is_hidden else Color(1.0, 0.9, 0.35, 0.75)
+
+
+func _update_hurt_visual() -> void:
+	if _hurt_flash_timer > 0.0:
+		# Flash red when hurt
+		var flash := sin(_hurt_flash_timer * 60.0) * 0.5 + 0.5
+		body_visual.modulate = Color(1.0, 0.2 * flash, 0.2 * flash, 1.0)
+
+
+func _create_frame_texture(texture: Texture2D, region_rect: Rect2i) -> AtlasTexture:
+	var atlas: AtlasTexture = AtlasTexture.new()
+	atlas.atlas = texture
+	atlas.region = Rect2(region_rect.position, region_rect.size)
+	return atlas

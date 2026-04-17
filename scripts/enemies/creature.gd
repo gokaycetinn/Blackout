@@ -2,20 +2,27 @@ extends CharacterBody2D
 
 const EnemyStates = preload("res://scripts/enemies/enemy_states.gd")
 const PlayerController = preload("res://scripts/player/player.gd")
-const PrototypeArt = preload("res://scripts/systems/prototype_art.gd")
+const ENEMY_SPRITESHEET = preload("res://assets/sci-fi-facility-asset-pack/guard_orange_spritesheet.png")
 
 @export var patrol_points: Array[Vector2] = []
 @export var patrol_speed: float = 50.0
-@export var investigate_speed: float = 70.0
-@export var chase_speed: float = 180.0
-@export var search_speed: float = 60.0
-@export var base_view_distance: float = 180.0
-@export var detection_gain: float = 55.0
-@export var detection_decay: float = 22.0
-@export var search_duration: float = 4.0
-@export var attack_duration: float = 0.6
+@export var investigate_speed: float = 74.0
+@export var chase_speed: float = 138.0
+@export var search_speed: float = 65.0
+@export var base_view_distance: float = 156.0
+@export var fov_degrees: float = 82.0
+@export var detection_gain: float = 34.0
+@export var detection_decay: float = 24.0
+@export var search_duration: float = 6.0
+@export var attack_range: float = 14.0
+@export var attack_cooldown: float = 2.1
+@export var lunge_speed: float = 275.0
+@export var lunge_duration: float = 0.18
+@export var idle_wait_time: float = 1.5
+@export var contact_attack_delay: float = 0.4
 
 @onready var body_visual: Sprite2D = $Body
+@onready var fov_cone: Polygon2D = $FOVCone
 
 var player: PlayerController = null
 var state: int = EnemyStates.State.PATROL
@@ -26,18 +33,44 @@ var state_timer: float = 0.0
 var search_timer: float = 0.0
 var health: int = 2
 var hit_flash_timer: float = 0.0
-var attack_timer: float = 0.0
-var attack_offset: Vector2 = Vector2.ZERO
+var _attack_cooldown_left: float = 0.0
+var _is_lunging: bool = false
+var _lunge_timer: float = 0.0
+var _lunge_direction: Vector2 = Vector2.ZERO
+var _search_angle: float = 0.0
+var _idle_variance: float = 0.0
+var _close_contact_time: float = 0.0
+var _base_body_scale: Vector2 = Vector2.ONE * 1.65
 
 
 func _ready() -> void:
-	body_visual.texture = PrototypeArt.create_creature_texture()
+	body_visual.texture = _create_frame_texture(ENEMY_SPRITESHEET, Rect2i(16, 0, 16, 16))
+	body_visual.scale = _base_body_scale
 	player = GameManager.player
 	last_known_position = global_position
+	_idle_variance = randf_range(0.5, 1.8)
 	GameManager.global_noise_emitted.connect(_on_global_noise_emitted)
 	if patrol_points.is_empty():
 		state = EnemyStates.State.IDLE
-		state_timer = 1.5
+		state_timer = idle_wait_time + _idle_variance
+	_setup_fov_cone()
+
+
+func _setup_fov_cone() -> void:
+	if not fov_cone:
+		return
+	var half_angle := deg_to_rad(fov_degrees * 0.5)
+	var segments := 10
+	var cone_length := base_view_distance * 0.72
+	var pts := PackedVector2Array()
+	pts.append(Vector2.ZERO)
+	for i in range(segments + 1):
+		var t := float(i) / float(segments)
+		var angle := lerpf(-half_angle, half_angle, t)
+		pts.append(Vector2(cos(angle), sin(angle)) * cone_length)
+	fov_cone.polygon = pts
+	fov_cone.color = Color(1.0, 0.18, 0.1, 0.0)
+	fov_cone.z_index = -1
 
 
 func _physics_process(delta: float) -> void:
@@ -52,53 +85,92 @@ func _physics_process(delta: float) -> void:
 			return
 
 	hit_flash_timer = maxf(hit_flash_timer - delta, 0.0)
-	_update_detection(delta)
-	_update_state(delta)
-	move_and_slide()
-	_update_visual_feedback()
+	_attack_cooldown_left = maxf(_attack_cooldown_left - delta, 0.0)
 
-	if state == EnemyStates.State.CHASING and global_position.distance_to(player.global_position) < 20.0 and not player.is_hidden_state():
-		_begin_attack()
+	if _is_lunging:
+		_handle_lunge(delta)
+	else:
+		_update_detection(delta)
+		_update_state(delta)
+		move_and_slide()
+
+	_update_visual_feedback()
+	_update_fov_cone()
+
+
+func _handle_lunge(delta: float) -> void:
+	_lunge_timer -= delta
+	velocity = _lunge_direction * lunge_speed
+	move_and_slide()
+
+	if _lunge_timer <= 0.0:
+		_is_lunging = false
+		velocity = Vector2.ZERO
+		if player and not player.is_hidden_state():
+			var dist := global_position.distance_to(player.global_position)
+			if dist < attack_range * 0.9:
+				player.apply_damage()
+		_attack_cooldown_left = attack_cooldown
+		_set_state(EnemyStates.State.CHASING)
 
 
 func apply_damage(amount: int, _direction: Vector2 = Vector2.ZERO) -> void:
 	health -= amount
 	detection_level = 100.0
-	hit_flash_timer = 0.18
+	hit_flash_timer = 0.22
 	if player:
 		last_known_position = player.global_position
-	_set_state(EnemyStates.State.CHASING)
 	if health <= 0:
 		GameManager.clear_detection_source(self)
+		_spawn_death_particles()
 		queue_free()
+		return
+	_set_state(EnemyStates.State.CHASING)
+
+
+func _spawn_death_particles() -> void:
+	for i in range(6):
+		var p := Polygon2D.new()
+		var s := randf_range(3.0, 8.0)
+		p.polygon = PackedVector2Array([
+			Vector2(-s, -s), Vector2(s, -s),
+			Vector2(s, s), Vector2(-s, s)
+		])
+		p.color = Color(0.75, 0.08, 0.08, 0.9)
+		p.global_position = global_position + Vector2(randf_range(-16.0, 16.0), randf_range(-16.0, 16.0))
+		get_tree().current_scene.add_child(p)
+		var tw := create_tween()
+		tw.tween_property(p, "position", p.position + Vector2(randf_range(-40.0, 40.0), randf_range(-40.0, 40.0)), 0.45)
+		tw.parallel().tween_property(p, "modulate:a", 0.0, 0.45)
+		tw.finished.connect(p.queue_free)
 
 
 func _update_detection(delta: float) -> void:
 	if player == null:
 		return
 
-	if state == EnemyStates.State.ATTACK:
-		GameManager.report_detection(self, 100.0)
-		return
-
 	var sees_player := _can_see_player()
 	if sees_player:
 		last_known_position = player.global_position
 		var visibility: float = player.get_visibility_multiplier()
-		var distance_ratio := 1.0 - minf(global_position.distance_to(player.global_position) / (base_view_distance * maxf(visibility, 0.5)), 1.0)
-		detection_level += detection_gain * maxf(distance_ratio, 0.15) * visibility * delta
+		var distance_to_player := global_position.distance_to(player.global_position)
+		var dist_ratio := 1.0 - minf(distance_to_player / (base_view_distance * maxf(visibility, 0.55)), 1.0)
+		var detection_push := maxf(dist_ratio - 0.2, 0.0)
+		detection_level += detection_gain * detection_push * maxf(visibility, 0.7) * delta
+		if distance_to_player < 72.0:
+			detection_level += 10.0 * delta
 	else:
-		var decay_multiplier := 2.0 if player.is_hidden_state() else 1.0
-		detection_level -= detection_decay * decay_multiplier * delta
+		var decay_mult := 2.5 if player.is_hidden_state() else 1.0
+		detection_level -= detection_decay * decay_mult * delta
 
 	detection_level = clampf(detection_level, 0.0, 100.0)
 	GameManager.report_detection(self, detection_level)
 
 	if detection_level >= 100.0:
 		_set_state(EnemyStates.State.CHASING)
-	elif detection_level >= 35.0:
+	elif detection_level >= 60.0:
 		_set_state(EnemyStates.State.INVESTIGATING)
-	elif detection_level > 0.0 and state in [EnemyStates.State.PATROL, EnemyStates.State.IDLE]:
+	elif detection_level >= 12.0 and state in [EnemyStates.State.PATROL, EnemyStates.State.IDLE]:
 		_set_state(EnemyStates.State.SUSPICIOUS)
 	elif detection_level <= 0.0 and state in [EnemyStates.State.SUSPICIOUS, EnemyStates.State.INVESTIGATING]:
 		_set_state(EnemyStates.State.PATROL if not patrol_points.is_empty() else EnemyStates.State.IDLE)
@@ -110,18 +182,21 @@ func _can_see_player() -> bool:
 
 	var to_player: Vector2 = player.global_position - global_position
 	var visibility: float = player.get_visibility_multiplier()
-	var max_distance := base_view_distance * clampf(visibility, 0.5, 2.4)
-	if to_player.length() > max_distance:
+	var max_dist := base_view_distance * clampf(visibility, 0.5, 2.0)
+
+	if to_player.length() > max_dist:
 		return false
 
-	var facing_direction := Vector2.RIGHT.rotated(rotation)
-	if facing_direction.dot(to_player.normalized()) < -0.2 and state != EnemyStates.State.CHASING:
-		return false
+	if state != EnemyStates.State.CHASING:
+		var facing := Vector2.RIGHT.rotated(rotation)
+		var half_angle := deg_to_rad(fov_degrees * 0.5)
+		var angle_to_player := facing.angle_to(to_player.normalized())
+		if abs(angle_to_player) > half_angle:
+			return false
 
 	var query := PhysicsRayQueryParameters2D.create(global_position, player.global_position)
 	query.exclude = [self]
 	query.collision_mask = 1 | 2
-
 	var hit := get_world_2d().direct_space_state.intersect_ray(query)
 	return not hit.is_empty() and hit.collider == player
 
@@ -133,41 +208,69 @@ func _update_state(delta: float) -> void:
 			state_timer -= delta
 			if state_timer <= 0.0 and not patrol_points.is_empty():
 				_set_state(EnemyStates.State.PATROL)
+
 		EnemyStates.State.PATROL:
 			_follow_target(patrol_points[patrol_index], patrol_speed)
 			if global_position.distance_to(patrol_points[patrol_index]) < 10.0:
 				patrol_index = (patrol_index + 1) % patrol_points.size()
 				_set_state(EnemyStates.State.IDLE)
+
 		EnemyStates.State.SUSPICIOUS:
 			velocity = Vector2.ZERO
 			state_timer -= delta
 			_look_toward(last_known_position)
 			if state_timer <= 0.0:
-				_set_state(EnemyStates.State.INVESTIGATING if detection_level >= 35.0 else (EnemyStates.State.PATROL if not patrol_points.is_empty() else EnemyStates.State.IDLE))
+				if detection_level >= 60.0:
+					_set_state(EnemyStates.State.INVESTIGATING)
+				else:
+					_set_state(EnemyStates.State.PATROL if not patrol_points.is_empty() else EnemyStates.State.IDLE)
+
 		EnemyStates.State.INVESTIGATING:
 			_follow_target(last_known_position, investigate_speed)
-			if global_position.distance_to(last_known_position) < 14.0 and detection_level < 35.0:
+			if global_position.distance_to(last_known_position) < 14.0 and detection_level < 60.0:
 				_set_state(EnemyStates.State.SEARCHING)
+
 		EnemyStates.State.CHASING:
 			if player:
 				last_known_position = player.global_position
 			_follow_target(last_known_position, chase_speed)
-			if not _can_see_player() and global_position.distance_to(last_known_position) < 20.0 and detection_level < 40.0:
+			if player and not player.is_hidden_state() and _attack_cooldown_left <= 0.0:
+				var dist := global_position.distance_to(player.global_position)
+				if dist < attack_range:
+					_close_contact_time += delta
+				else:
+					_close_contact_time = maxf(_close_contact_time - delta * 2.0, 0.0)
+				if _close_contact_time >= contact_attack_delay:
+					_begin_lunge()
+			elif not _can_see_player() and global_position.distance_to(last_known_position) < 20.0 and detection_level < 45.0:
+				_close_contact_time = 0.0
 				_set_state(EnemyStates.State.SEARCHING)
+
 		EnemyStates.State.SEARCHING:
 			search_timer -= delta
-			var sweep_target := last_known_position + Vector2(cos(Time.get_ticks_msec() / 350.0), sin(Time.get_ticks_msec() / 470.0)) * 28.0
+			_search_angle += delta * 1.4
+			var sweep_radius := minf((_search_duration_ref() - search_timer) / _search_duration_ref() * 55.0, 55.0)
+			var sweep_target := last_known_position + Vector2(cos(_search_angle), sin(_search_angle)) * sweep_radius
 			_follow_target(sweep_target, search_speed)
 			if search_timer <= 0.0:
 				_set_state(EnemyStates.State.PATROL if not patrol_points.is_empty() else EnemyStates.State.IDLE)
-		EnemyStates.State.ATTACK:
-			velocity = Vector2.ZERO
-			if player:
-				global_position = player.global_position + attack_offset
-				_look_toward(player.global_position)
-			attack_timer -= delta
-			if attack_timer <= 0.0:
-				GameManager.request_game_over("The creature latched onto Alex in the dark.")
+
+
+func _search_duration_ref() -> float:
+	return search_duration
+
+
+func _begin_lunge() -> void:
+	if player == null:
+		return
+	_is_lunging = true
+	_close_contact_time = 0.0
+	_lunge_timer = lunge_duration
+	_lunge_direction = (player.global_position - global_position).normalized()
+	_look_toward(player.global_position)
+	var tw := create_tween()
+	tw.tween_property(body_visual, "scale", Vector2(_base_body_scale.x * 1.22, _base_body_scale.y * 0.84), 0.08)
+	tw.tween_property(body_visual, "scale", _base_body_scale, 0.14)
 
 
 func _follow_target(target: Vector2, speed: float) -> void:
@@ -182,32 +285,29 @@ func _follow_target(target: Vector2, speed: float) -> void:
 func _look_toward(target: Vector2) -> void:
 	var to_target := target - global_position
 	if to_target.length_squared() > 0.0001:
-		rotation = to_target.angle()
+		var target_angle := to_target.angle()
+		rotation = lerp_angle(rotation, target_angle, 0.22)
 
 
 func _set_state(new_state: int) -> void:
 	if new_state == state:
 		return
 	state = new_state
+	_close_contact_time = 0.0
 	match state:
 		EnemyStates.State.IDLE:
-			state_timer = 1.5
-			body_visual.modulate = Color(0.55, 0.15, 0.15, 1.0)
+			state_timer = idle_wait_time + _idle_variance
 		EnemyStates.State.PATROL:
-			body_visual.modulate = Color(0.7, 0.2, 0.2, 1.0)
+			pass
 		EnemyStates.State.SUSPICIOUS:
-			state_timer = 0.8
-			body_visual.modulate = Color(0.85, 0.35, 0.2, 1.0)
+			state_timer = 1.0
 		EnemyStates.State.INVESTIGATING:
-			body_visual.modulate = Color(1.0, 0.45, 0.2, 1.0)
+			pass
 		EnemyStates.State.CHASING:
-			body_visual.modulate = Color(1.0, 0.1, 0.1, 1.0)
+			pass
 		EnemyStates.State.SEARCHING:
 			search_timer = search_duration
-			body_visual.modulate = Color(0.95, 0.25, 0.4, 1.0)
-		EnemyStates.State.ATTACK:
-			attack_timer = attack_duration
-			body_visual.modulate = Color(1.0, 0.0, 0.24, 1.0)
+			_search_angle = randf_range(0.0, TAU)
 
 
 func _on_global_noise_emitted(position: Vector2, strength: float) -> void:
@@ -215,29 +315,54 @@ func _on_global_noise_emitted(position: Vector2, strength: float) -> void:
 	if distance > strength:
 		return
 	last_known_position = position
-	detection_level = maxf(detection_level, lerpf(20.0, 70.0, 1.0 - clampf(distance / strength, 0.0, 1.0)))
+	detection_level = maxf(detection_level, lerpf(12.0, 58.0, 1.0 - clampf(distance / strength, 0.0, 1.0)))
 	if state != EnemyStates.State.CHASING:
-		_set_state(EnemyStates.State.INVESTIGATING if detection_level >= 35.0 else EnemyStates.State.SUSPICIOUS)
+		_set_state(EnemyStates.State.INVESTIGATING if detection_level >= 60.0 else EnemyStates.State.SUSPICIOUS)
 
 
 func _exit_tree() -> void:
 	GameManager.clear_detection_source(self)
 
 
-func _begin_attack() -> void:
-	if state == EnemyStates.State.ATTACK or player == null:
+func _update_fov_cone() -> void:
+	if not fov_cone:
 		return
-	attack_offset = (global_position - player.global_position).normalized() * 12.0
-	if attack_offset.length_squared() <= 0.01:
-		attack_offset = Vector2(10.0, -6.0)
-	_set_state(EnemyStates.State.ATTACK)
+	match state:
+		EnemyStates.State.PATROL, EnemyStates.State.IDLE:
+			fov_cone.color = Color(0.9, 0.9, 0.9, 0.03)
+		EnemyStates.State.SUSPICIOUS:
+			fov_cone.color = Color(1.0, 0.85, 0.2, 0.08)
+		EnemyStates.State.INVESTIGATING:
+			fov_cone.color = Color(1.0, 0.5, 0.15, 0.12)
+		EnemyStates.State.CHASING, EnemyStates.State.SEARCHING:
+			fov_cone.color = Color(1.0, 0.1, 0.1, 0.17)
 
 
 func _update_visual_feedback() -> void:
-	if state == EnemyStates.State.ATTACK:
-		body_visual.scale = Vector2(1.15, 0.88)
+	if _is_lunging:
+		body_visual.modulate = Color(1.0, 0.3, 0.3, 1.0)
 	elif hit_flash_timer > 0.0:
-		body_visual.modulate = Color(1.0, 0.85, 0.85, 1.0)
-		body_visual.scale = Vector2.ONE * 1.08
+		body_visual.modulate = Color(1.0, 0.9, 0.9, 1.0)
+		body_visual.scale = _base_body_scale * 1.08
 	else:
-		body_visual.scale = Vector2.ONE
+		body_visual.scale = body_visual.scale.lerp(_base_body_scale, 0.25)
+		match state:
+			EnemyStates.State.IDLE:
+				body_visual.modulate = Color(0.72, 0.72, 0.8, 1.0)
+			EnemyStates.State.PATROL:
+				body_visual.modulate = Color(0.86, 0.86, 0.92, 1.0)
+			EnemyStates.State.SUSPICIOUS:
+				body_visual.modulate = Color(1.0, 0.84, 0.42, 1.0)
+			EnemyStates.State.INVESTIGATING:
+				body_visual.modulate = Color(1.0, 0.62, 0.35, 1.0)
+			EnemyStates.State.CHASING:
+				body_visual.modulate = Color(1.0, 0.34, 0.28, 1.0)
+			EnemyStates.State.SEARCHING:
+				body_visual.modulate = Color(0.94, 0.44, 0.7, 1.0)
+
+
+func _create_frame_texture(texture: Texture2D, region_rect: Rect2i) -> AtlasTexture:
+	var atlas: AtlasTexture = AtlasTexture.new()
+	atlas.atlas = texture
+	atlas.region = Rect2(region_rect.position, region_rect.size)
+	return atlas
