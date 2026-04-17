@@ -1,5 +1,6 @@
 extends Node2D
 
+const PrototypeArt = preload("res://scripts/systems/prototype_art.gd")
 const PLAYER_SCENE := preload("res://scenes/player/player.tscn")
 const CREATURE_SCENE := preload("res://scenes/enemies/creature.tscn")
 const BATTERY_SCENE := preload("res://scenes/items/battery.tscn")
@@ -12,6 +13,9 @@ const MAP_WIDTH := 1600.0
 const MAP_HEIGHT := 960.0
 
 @onready var world: Node2D = $World
+@onready var ground_layer: TileMapLayer = $GroundLayer
+@onready var wall_layer: TileMapLayer = $WallLayer
+@onready var decor_layer: TileMapLayer = $DecorLayer
 @onready var environment_lights: Node2D = $EnvironmentLights
 @onready var enemies_root: Node2D = $Enemies
 @onready var items_root: Node2D = $Items
@@ -21,12 +25,15 @@ const MAP_HEIGHT := 960.0
 var player: CharacterBody2D
 var _camera_trauma: float = 0.0
 var _camera_base_offset: Vector2 = Vector2.ZERO
+var _tile_size: int = 32
+var _tileset: TileSet
 
 
 func _ready() -> void:
 	GameManager.reset_run()
 	GameManager.register_level(self)
 	GameManager.gunshot_fired.connect(_on_gunshot_fired)
+	_setup_tile_layers()
 	_build_floor()
 	_build_walls()
 	_spawn_player()
@@ -52,15 +59,8 @@ func _process(delta: float) -> void:
 
 
 func _build_floor() -> void:
-	var floor_poly := Polygon2D.new()
-	floor_poly.polygon = PackedVector2Array([
-		Vector2(0, 0),
-		Vector2(MAP_WIDTH, 0),
-		Vector2(MAP_WIDTH, MAP_HEIGHT),
-		Vector2(0, MAP_HEIGHT)
-	])
-	floor_poly.color = Color(0.11, 0.12, 0.15, 1.0)
-	world.add_child(floor_poly)
+	var full_floor := Rect2(Vector2.ZERO, Vector2(MAP_WIDTH, MAP_HEIGHT))
+	_paint_tile_region(ground_layer, full_floor, Vector2i(0, 0))
 
 	for room in [
 		Rect2(80, 110, 240, 170),
@@ -70,15 +70,7 @@ func _build_floor() -> void:
 		Rect2(640, 460, 270, 220),
 		Rect2(1110, 610, 250, 150)
 	]:
-		var highlight := Polygon2D.new()
-		highlight.polygon = PackedVector2Array([
-			room.position,
-			room.position + Vector2(room.size.x, 0),
-			room.position + room.size,
-			room.position + Vector2(0, room.size.y)
-		])
-		highlight.color = Color(0.15, 0.17, 0.2, 1.0)
-		world.add_child(highlight)
+		_paint_tile_region(ground_layer, room, Vector2i(1, 0))
 		_add_room_border(room, Color(0.19, 0.22, 0.26, 0.8))
 		_add_room_grime(room)
 
@@ -107,6 +99,7 @@ func _build_walls() -> void:
 
 
 func _spawn_wall(rect: Rect2) -> void:
+	_paint_tile_region(wall_layer, rect, Vector2i(2, 0))
 	var wall := StaticBody2D.new()
 	wall.collision_layer = 1
 	wall.collision_mask = 0
@@ -323,6 +316,7 @@ func _add_prop(rect: Rect2, color: Color) -> void:
 	prop.add_child(fill)
 
 	world.add_child(prop)
+	_paint_tile_region(decor_layer, rect.grow(2.0), Vector2i(3, 0))
 
 
 func _add_stripe(rect: Rect2) -> void:
@@ -362,3 +356,31 @@ func _add_decal(rect: Rect2, color: Color) -> void:
 
 func _on_gunshot_fired(_position: Vector2) -> void:
 	_camera_trauma = minf(_camera_trauma + 1.0, 1.2)
+
+
+func _setup_tile_layers() -> void:
+	_tileset = TileSet.new()
+	_tileset.tile_size = Vector2i(_tile_size, _tile_size)
+	var atlas := TileSetAtlasSource.new()
+	atlas.texture = PrototypeArt.create_tilesheet(_tile_size)
+	atlas.texture_region_size = Vector2i(_tile_size, _tile_size)
+
+	for atlas_x in range(4):
+		atlas.create_tile(Vector2i(atlas_x, 0))
+
+	_tileset.add_source(atlas, 0)
+	ground_layer.tile_set = _tileset
+	wall_layer.tile_set = _tileset
+	decor_layer.tile_set = _tileset
+	ground_layer.y_sort_enabled = false
+	wall_layer.y_sort_enabled = false
+	decor_layer.y_sort_enabled = false
+
+
+func _paint_tile_region(layer: TileMapLayer, rect: Rect2, atlas_coords: Vector2i) -> void:
+	var start := Vector2i(floori(rect.position.x / _tile_size), floori(rect.position.y / _tile_size))
+	var end := Vector2i(ceili((rect.position.x + rect.size.x) / _tile_size), ceili((rect.position.y + rect.size.y) / _tile_size))
+
+	for tile_x in range(start.x, end.x):
+		for tile_y in range(start.y, end.y):
+			layer.set_cell(Vector2i(tile_x, tile_y), 0, atlas_coords)

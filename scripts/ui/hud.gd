@@ -1,5 +1,7 @@
 extends CanvasLayer
 
+const PrototypeArt = preload("res://scripts/systems/prototype_art.gd")
+
 @onready var battery_bar: ProgressBar = %BatteryBar
 @onready var ammo_value: Label = %AmmoValue
 @onready var detection_label: Label = %DetectionLabel
@@ -13,10 +15,16 @@ extends CanvasLayer
 @onready var fail_reason_label: Label = %FailReason
 @onready var restart_buttons: Array[Button] = [%PauseRestartButton, %FailRestartButton, %WinRestartButton]
 @onready var menu_buttons: Array[Button] = [%PauseMenuButton, %FailMenuButton, %WinMenuButton]
+@onready var top_left_panel: PanelContainer = %TopLeftPanel
+@onready var stealth_box: PanelContainer = %StealthBox
+@onready var pause_panel_container: PanelContainer = %PausePanel
+@onready var fail_panel_container: PanelContainer = %FailPanel
+@onready var win_panel_container: PanelContainer = %WinPanel
 
 
 func _ready() -> void:
 	process_mode = PROCESS_MODE_ALWAYS
+	_apply_skin()
 	GameManager.battery_changed.connect(_on_battery_changed)
 	GameManager.ammo_changed.connect(_on_ammo_changed)
 	GameManager.detection_changed.connect(_on_detection_changed)
@@ -107,3 +115,32 @@ func _on_restart_pressed() -> void:
 
 func _on_menu_pressed() -> void:
 	GameManager.return_to_menu()
+
+
+func _apply_skin() -> void:
+	var dark_panel := PrototypeArt.create_stylebox(
+		Color(0.05, 0.055, 0.07, 0.88),
+		Color(0.28, 0.31, 0.38, 0.95),
+		2,
+		10,
+		Color(0, 0, 0, 0.35)
+	)
+	var modal_panel := PrototypeArt.create_stylebox(
+		Color(0.04, 0.045, 0.055, 0.94),
+		Color(0.56, 0.18, 0.16, 0.95),
+		2,
+		12,
+		Color(0, 0, 0, 0.45)
+	)
+
+	top_left_panel.add_theme_stylebox_override("panel", dark_panel)
+	stealth_box.add_theme_stylebox_override("panel", dark_panel.duplicate())
+	pause_panel_container.add_theme_stylebox_override("panel", modal_panel)
+	fail_panel_container.add_theme_stylebox_override("panel", modal_panel.duplicate())
+	win_panel_container.add_theme_stylebox_override("panel", PrototypeArt.create_stylebox(
+		Color(0.04, 0.055, 0.055, 0.94),
+		Color(0.2, 0.54, 0.42, 0.95),
+		2,
+		12,
+		Color(0, 0, 0, 0.45)
+	))

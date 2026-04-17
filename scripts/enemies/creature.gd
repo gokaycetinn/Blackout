@@ -2,6 +2,7 @@ extends CharacterBody2D
 
 const EnemyStates = preload("res://scripts/enemies/enemy_states.gd")
 const PlayerController = preload("res://scripts/player/player.gd")
+const PrototypeArt = preload("res://scripts/systems/prototype_art.gd")
 
 @export var patrol_points: Array[Vector2] = []
 @export var patrol_speed: float = 50.0
@@ -14,7 +15,7 @@ const PlayerController = preload("res://scripts/player/player.gd")
 @export var search_duration: float = 4.0
 @export var attack_duration: float = 0.6
 
-@onready var body_visual: Polygon2D = $Body
+@onready var body_visual: Sprite2D = $Body
 
 var player: PlayerController = null
 var state: int = EnemyStates.State.PATROL
@@ -30,6 +31,7 @@ var attack_offset: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
+	body_visual.texture = PrototypeArt.create_creature_texture()
 	player = GameManager.player
 	last_known_position = global_position
 	GameManager.global_noise_emitted.connect(_on_global_noise_emitted)
@@ -190,22 +192,22 @@ func _set_state(new_state: int) -> void:
 	match state:
 		EnemyStates.State.IDLE:
 			state_timer = 1.5
-			body_visual.color = Color(0.55, 0.15, 0.15, 1.0)
+			body_visual.modulate = Color(0.55, 0.15, 0.15, 1.0)
 		EnemyStates.State.PATROL:
-			body_visual.color = Color(0.7, 0.2, 0.2, 1.0)
+			body_visual.modulate = Color(0.7, 0.2, 0.2, 1.0)
 		EnemyStates.State.SUSPICIOUS:
 			state_timer = 0.8
-			body_visual.color = Color(0.85, 0.35, 0.2, 1.0)
+			body_visual.modulate = Color(0.85, 0.35, 0.2, 1.0)
 		EnemyStates.State.INVESTIGATING:
-			body_visual.color = Color(1.0, 0.45, 0.2, 1.0)
+			body_visual.modulate = Color(1.0, 0.45, 0.2, 1.0)
 		EnemyStates.State.CHASING:
-			body_visual.color = Color(1.0, 0.1, 0.1, 1.0)
+			body_visual.modulate = Color(1.0, 0.1, 0.1, 1.0)
 		EnemyStates.State.SEARCHING:
 			search_timer = search_duration
-			body_visual.color = Color(0.95, 0.25, 0.4, 1.0)
+			body_visual.modulate = Color(0.95, 0.25, 0.4, 1.0)
 		EnemyStates.State.ATTACK:
 			attack_timer = attack_duration
-			body_visual.color = Color(1.0, 0.0, 0.24, 1.0)
+			body_visual.modulate = Color(1.0, 0.0, 0.24, 1.0)
 
 
 func _on_global_noise_emitted(position: Vector2, strength: float) -> void:
@@ -235,7 +237,7 @@ func _update_visual_feedback() -> void:
 	if state == EnemyStates.State.ATTACK:
 		body_visual.scale = Vector2(1.15, 0.88)
 	elif hit_flash_timer > 0.0:
-		body_visual.color = Color(1.0, 0.85, 0.85, 1.0)
+		body_visual.modulate = Color(1.0, 0.85, 0.85, 1.0)
 		body_visual.scale = Vector2.ONE * 1.08
 	else:
 		body_visual.scale = Vector2.ONE

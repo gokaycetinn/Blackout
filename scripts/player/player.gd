@@ -1,11 +1,13 @@
 extends CharacterBody2D
 
+const PrototypeArt = preload("res://scripts/systems/prototype_art.gd")
+
 @export var walk_speed: float = 120.0
 @export var run_speed: float = 200.0
 @export var crouch_speed: float = 60.0
 
-@onready var body_visual: Polygon2D = $Body
-@onready var facing_marker: Polygon2D = $FacingMarker
+@onready var body_visual: Sprite2D = $Body
+@onready var facing_marker: Sprite2D = $FacingMarker
 @onready var flashlight = $Flashlight
 @onready var weapon_mount = $WeaponMount
 @onready var interact_area: Area2D = $InteractArea
@@ -19,6 +21,8 @@ var _footstep_timer: float = 0.0
 
 
 func _ready() -> void:
+	body_visual.texture = PrototypeArt.create_player_texture()
+	facing_marker.texture = PrototypeArt.create_rect_texture(Vector2i(12, 6), Color(0.92, 0.66, 0.28, 0.95))
 	GameManager.register_player(self)
 	interact_area.area_entered.connect(_on_interact_area_entered)
 	interact_area.area_exited.connect(_on_interact_area_exited)
@@ -195,13 +199,11 @@ func _refresh_interact_prompt() -> void:
 
 
 func _update_visual_state() -> void:
-	var body_color := body_visual.color
-	body_color.a = 0.25 if is_hidden else 1.0
-	body_visual.color = body_color
+	var body_modulate := Color(0.78, 0.92, 0.82, 0.25 if is_hidden else 1.0)
+	body_visual.modulate = body_modulate
 
-	var marker_color := facing_marker.color
-	marker_color.a = 0.3 if is_hidden else 1.0
-	facing_marker.color = marker_color
+	var marker_modulate := Color(0.95, 0.72, 0.32, 0.3 if is_hidden else 1.0)
+	facing_marker.modulate = marker_modulate
 
 	stealth_indicator.visible = is_crouching or is_hidden
 	stealth_indicator.color = Color(0.4, 0.9, 0.6, 0.8) if is_hidden else Color(1.0, 0.9, 0.35, 0.75)

@@ -13,9 +13,8 @@ script = ExtResource("1")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("1")
 
-[node name="Table" type="Polygon2D" parent="."]
-color = Color(0.439216, 0.270588, 0.145098, 1)
-polygon = PackedVector2Array(-28, -12, 28, -12, 28, 12, -28, 12)
+[node name="Table" type="Sprite2D" parent="."]
+centered = true
 
 [node name="HideAnchor" type="Marker2D" parent="."]
 position = Vector2(0, 0)

@@ -5,3 +5,15 @@ res://scripts/enemies/enemy_states.gd
 res://scripts/levels/level_01.gd
 res://scripts/player/weapon.gd
 res://scripts/ui/hud.gd
+res://scenes/enemies/creature.tscn
+res://scenes/items/ammo.tscn
+res://scenes/items/battery.tscn
+res://scenes/objects/door_exit.tscn
+res://scenes/objects/hiding_spot.tscn
+res://scenes/objects/light_source.tscn
+res://scenes/player/player.tscn
+res://scripts/items/ammo.gd
+res://scripts/items/battery.gd
+res://scripts/objects/door_exit.gd
+res://scripts/objects/hiding_spot.gd
+res://scripts/objects/light_source.gd
