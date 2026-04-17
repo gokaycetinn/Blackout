@@ -4,16 +4,16 @@ This prototype currently uses freely accessible preview art gathered from public
 
 ### Current sources
 
-- `assets/external/kamisama/header.png`
-  Source page: `https://kamisama887.itch.io/horror-lab-top-down`
+- `assets/external/marceles/header.png`
+  Source page: `https://marceles.itch.io/land-of-pixels-laboratory-tileset-pixel-art`
   Usage: main menu banner.
 
-- `assets/external/kamisama/og_image.png`
-  Source page: `https://kamisama887.itch.io/horror-lab-top-down`
+- `assets/external/marceles/screen_tiles.png`
+  Source page: `https://marceles.itch.io/land-of-pixels-laboratory-tileset-pixel-art`
   Usage: main menu backdrop and low-opacity level backdrop.
 
-- `assets/external/kamisama/screenshot_1.png`
-  Source page: `https://kamisama887.itch.io/horror-lab-top-down`
+- `assets/external/marceles/screen_lab.png`
+  Source page: `https://marceles.itch.io/land-of-pixels-laboratory-tileset-pixel-art`
   Usage: low-opacity laboratory room reference art inside level presentation.
 
 ### Notes

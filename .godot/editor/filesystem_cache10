@@ -1,5 +1,5 @@
 63f7b34db8d8cdea90c76aacccf841ec
-::res://::1776461109
+::res://::1776461466
 aia_cookies.txt::TextFile::-1::1776460950::0::1::::<><><>0<>0<><>::
 implementation_plan.md::TextFile::-1::1776439858::0::1::::<><><>0<>0<><>::
 marceles_cookies.txt::TextFile::-1::1776460950::0::1::::<><><>0<>0<><>::
@@ -9,12 +9,18 @@ rg_cookies.txt::TextFile::-1::1776460950::0::1::::<><><>0<>0<><>::
 ::res://assets/audio/ambient/::1776457832
 ::res://assets/audio/music/::1776457832
 ::res://assets/audio/sfx/::1776457832
-::res://assets/external/::1776461129
-::res://assets/external/kamisama/::1776461131
+::res://assets/external/::1776461490
+README_assets.md::TextFile::-1::1776461325::0::1::::<><><>0<>0<><>::
+::res://assets/external/kamisama/::1776461158
 header.png::CompressedTexture2D::1859742813206785597::1776461131::1776461158::1::::<><><>0<>0<>d1320bb1814a82d49a0490f33a8dfac9<>res://.godot/imported/header.png-7f56a29eb39a6964ba4bb05800686741.ctex::
 og_image.png::CompressedTexture2D::186041776576781270::1776461130::1776461158::1::::<><><>0<>0<>dc4971ee1c153802f36285cbd7a2a266<>res://.godot/imported/og_image.png-d92f615c935dce5464c6cf86082e0b2f.ctex::
 screenshot_1.png::CompressedTexture2D::7918114195547029179::1776461130::1776461158::1::::<><><>0<>0<>f9a1db7052ce0906a2ac19f28cd8a2f1<>res://.godot/imported/screenshot_1.png-90f6c9fa269c4f8604a2c61775c5a3fe.ctex::
 screenshot_2.png::CompressedTexture2D::8462423598665171216::1776461131::1776461158::1::::<><><>0<>0<>0b8dfcdd67a3aa9bde88c34e516b3797<>res://.godot/imported/screenshot_2.png-c27f2316a5f127e1181e3c7ad2eb88ba.ctex::
+::res://assets/external/marceles/::1776461492
+cover.png::CompressedTexture2D::3739493836991157426::1776461490::1776461495::1::::<><><>0<>0<>6faf0d0d389d2e55c9ac6d2910530c8c<>res://.godot/imported/cover.png-43d4db5c0aebe32046a3251d88bee9b9.ctex::
+header.png::CompressedTexture2D::6423051800422329647::1776461490::1776461495::1::::<><><>0<>0<>5cfebffba1669da2d233cfaad55fffa1<>res://.godot/imported/header.png-cae4b0df486208de0bb2410873e14a8e.ctex::
+screen_lab.png::CompressedTexture2D::6781610330149323741::1776461491::1776461496::1::::<><><>0<>0<>ccf8f8d5ab09f080c19932e069896b22<>res://.godot/imported/screen_lab.png-9f7148c5a0d8e4a23b192dc0157c8e6e.ctex::
+screen_tiles.png::CompressedTexture2D::3385097670735767890::1776461492::1776461495::1::::<><><>0<>0<>2ee58733ba503c6ff38abb1f5521237a<>res://.godot/imported/screen_tiles.png-9facd3f4bb75ce8ed075a3a584e58bb9.ctex::
 ::res://assets/fonts/::1776457832
 ::res://assets/sprites/::1776457832
 ::res://assets/sprites/enemies/::1776457832
@@ -33,7 +39,7 @@ creature.tscn::PackedScene::-1::1776460226::0::1::::<><><>0<>0<><>::res://script
 ammo.tscn::PackedScene::-1::1776460226::0::1::::<><><>0<>0<><>::res://scripts/items/ammo.gd
 battery.tscn::PackedScene::-1::1776460226::0::1::::<><><>0<>0<><>::res://scripts/items/battery.gd
 ::res://scenes/levels/::1776458414
-level_01.tscn::PackedScene::-1::1776460226::0::1::::<><><>0<>0<><>::res://scripts/levels/level_01.gd<>res://scenes/ui/hud.tscn
+level_01.tscn::PackedScene::-1::1776461288::0::1::::<><><>0<>0<><>::res://scripts/levels/level_01.gd<>res://scenes/ui/hud.tscn
 ::res://scenes/objects/::1776458414
 door_exit.tscn::PackedScene::-1::1776460226::0::1::::<><><>0<>0<><>::res://scripts/objects/door_exit.gd
 hiding_spot.tscn::PackedScene::-1::1776460226::0::1::::<><><>0<>0<><>::res://scripts/objects/hiding_spot.gd
@@ -42,7 +48,7 @@ light_source.tscn::PackedScene::-1::1776460226::0::1::::<><><>0<>0<><>::res://sc
 player.tscn::PackedScene::-1::1776460226::0::1::::<><><>0<>0<><>::res://scripts/player/player.gd<>res://scripts/player/flashlight.gd<>res://scripts/player/weapon.gd
 ::res://scenes/ui/::1776458414
 hud.tscn::PackedScene::-1::1776460226::0::1::::<><><>0<>0<><>::res://scripts/ui/hud.gd
-main_menu.tscn::PackedScene::-1::1776458414::0::1::::<><><>0<>0<><>::res://scripts/ui/menus.gd
+main_menu.tscn::PackedScene::-1::1776461315::0::1::::<><><>0<>0<><>::res://scripts/ui/menus.gd
 ::res://scripts/::1776458080
 ::res://scripts/enemies/::1776458980
 creature.gd::GDScript::5806797314848505978::1776460226::0::1::::<>CharacterBody2D<><>0<>0<><>::
@@ -66,4 +72,4 @@ game_manager.gd::GDScript::1820084539799081321::1776459208::0::1::::<>Node<><>0<
 prototype_art.gd::GDScript::7974822334336998168::1776460226::0::1::::<>RefCounted<><>0<>0<><>::
 ::res://scripts/ui/::1776458980
 hud.gd::GDScript::2694816389104379170::1776460226::0::1::::<>CanvasLayer<><>0<>0<><>::
-menus.gd::GDScript::5112923940690979135::1776458283::0::1::::<>Control<><>0<>0<><>::
+menus.gd::GDScript::5112923940690979135::1776461288::0::1::::<>Control<><>0<>0<><>::

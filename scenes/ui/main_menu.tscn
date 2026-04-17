@@ -1,16 +1,16 @@
 [gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/menus.gd" id="1"]
-[ext_resource type="Texture2D" path="res://assets/external/kamisama/header.png" id="2"]
-[ext_resource type="Texture2D" path="res://assets/external/kamisama/og_image.png" id="3"]
+[ext_resource type="Texture2D" path="res://assets/external/marceles/header.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/external/marceles/screen_tiles.png" id="3"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_menu"]
-bg_color = Color(0.0588235, 0.027451, 0.0313726, 0.88)
+bg_color = Color(0.055, 0.11, 0.19, 0.86)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.564706, 0.247059, 0.247059, 0.9)
+border_color = Color(0.47, 0.74, 0.96, 0.9)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
@@ -34,7 +34,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.0313726, 0.0196078, 0.027451, 1)
+color = Color(0.0352941, 0.0823529, 0.145098, 1)
 
 [node name="BackgroundArt" type="TextureRect" parent="."]
 layout_mode = 1
@@ -54,7 +54,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.0392157, 0.0117647, 0.0117647, 0.72)
+color = Color(0.0156863, 0.0313726, 0.054902, 0.5)
 
 [node name="CenterPanel" type="PanelContainer" parent="."]
 layout_mode = 1
@@ -85,27 +85,27 @@ custom_minimum_size = Vector2(0, 120)
 [node name="Title" type="Label" parent="CenterPanel/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 52
-theme_override_colors/font_color = Color(0.968627, 0.901961, 0.862745, 1)
+theme_override_colors/font_color = Color(0.882353, 0.960784, 1, 1)
 text = "BLACKOUT"
 horizontal_alignment = 1
 
 [node name="Subtitle" type="Label" parent="CenterPanel/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
-theme_override_colors/font_color = Color(0.913725, 0.760784, 0.752941, 1)
+theme_override_colors/font_color = Color(0.607843, 0.843137, 1, 1)
 text = "Prototype I  |  2D Survival Horror / Stealth"
 horizontal_alignment = 1
 
 [node name="Description" type="Label" parent="CenterPanel/VBoxContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.905882, 0.894118, 0.898039, 1)
+theme_override_colors/font_color = Color(0.86, 0.92, 0.98, 1)
 text = "Sneak through a blackout-struck facility, manage your flashlight battery, and reach the exit before the creatures lock onto you."
 autowrap_mode = 3
 horizontal_alignment = 1
 
 [node name="Controls" type="Label" parent="CenterPanel/VBoxContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.690196, 0.760784, 0.823529, 1)
+theme_override_colors/font_color = Color(0.56, 0.76, 0.91, 1)
 text = "WASD Move | Shift Run | Ctrl Crouch | F Flashlight | E Interact/Hide | Left Click Fire | Esc Pause"
 autowrap_mode = 3
 horizontal_alignment = 1
