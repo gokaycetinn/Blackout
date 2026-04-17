@@ -18,3 +18,4 @@ res://scripts/objects/door_exit.gd
 res://scripts/objects/hiding_spot.gd
 res://scripts/objects/light_source.gd
 res://scripts/ui/menus.gd
+res://scripts/systems/marceles_lab_art.gd
