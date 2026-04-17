@@ -1,0 +1,5 @@
+res://scripts/player/player.gd
+res://scripts/enemies/creature.gd
+res://scripts/systems/game_manager.gd
+res://scripts/enemies/enemy_states.gd
+res://scripts/levels/level_01.gd

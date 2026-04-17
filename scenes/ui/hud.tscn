@@ -1,0 +1,214 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/hud.gd" id="1"]
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1")
+layer = 1
+
+[node name="DetectionWarning" type="ColorRect" parent="."]
+unique_name_in_owner = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.901961, 0.0980392, 0.0980392, 0.168627)
+
+[node name="TopLeft" type="MarginContainer" parent="."]
+anchors_preset = 1
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 324.0
+offset_bottom = 160.0
+
+[node name="TopLeftVBox" type="VBoxContainer" parent="TopLeft"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BatteryLabel" type="Label" parent="TopLeft/TopLeftVBox"]
+layout_mode = 2
+text = "BATTERY"
+
+[node name="BatteryBar" type="ProgressBar" parent="TopLeft/TopLeftVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="AmmoRow" type="HBoxContainer" parent="TopLeft/TopLeftVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AmmoLabel" type="Label" parent="TopLeft/TopLeftVBox/AmmoRow"]
+layout_mode = 2
+text = "AMMO"
+
+[node name="AmmoValue" type="Label" parent="TopLeft/TopLeftVBox/AmmoRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "x 6"
+
+[node name="TopRight" type="MarginContainer" parent="."]
+anchors_preset = 10
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -244.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = 94.0
+grow_horizontal = 0
+
+[node name="StealthBox" type="PanelContainer" parent="TopRight"]
+layout_mode = 2
+
+[node name="StealthValue" type="Label" parent="TopRight/StealthBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Exposed"
+horizontal_alignment = 1
+
+[node name="PromptLabel" type="Label" parent="."]
+unique_name_in_owner = true
+anchors_preset = 14
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 500.0
+offset_top = -74.0
+offset_right = -500.0
+offset_bottom = -30.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+visible = false
+
+[node name="PausePanel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -110.0
+offset_right = 180.0
+offset_bottom = 110.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+
+[node name="PauseVBox" type="VBoxContainer" parent="PausePanel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="PauseTitle" type="Label" parent="PausePanel/PauseVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Paused"
+horizontal_alignment = 1
+
+[node name="PauseHint" type="Label" parent="PausePanel/PauseVBox"]
+layout_mode = 2
+text = "Esc resumes play."
+horizontal_alignment = 1
+
+[node name="PauseRestartButton" type="Button" parent="PausePanel/PauseVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Restart"
+
+[node name="PauseMenuButton" type="Button" parent="PausePanel/PauseVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Main Menu"
+
+[node name="FailPanel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -210.0
+offset_top = -130.0
+offset_right = 210.0
+offset_bottom = 130.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+
+[node name="FailVBox" type="VBoxContainer" parent="FailPanel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="FailTitle" type="Label" parent="FailPanel/FailVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+theme_override_colors/font_color = Color(0.929412, 0.203922, 0.14902, 1)
+text = "Game Over"
+horizontal_alignment = 1
+
+[node name="FailReason" type="Label" parent="FailPanel/FailVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "The darkness won."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="FailRestartButton" type="Button" parent="FailPanel/FailVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Try Again"
+
+[node name="FailMenuButton" type="Button" parent="FailPanel/FailVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Main Menu"
+
+[node name="WinPanel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -210.0
+offset_top = -120.0
+offset_right = 210.0
+offset_bottom = 120.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+
+[node name="WinVBox" type="VBoxContainer" parent="WinPanel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="WinTitle" type="Label" parent="WinPanel/WinVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+theme_override_colors/font_color = Color(0.376471, 0.886275, 0.596078, 1)
+text = "Escape Successful"
+horizontal_alignment = 1
+
+[node name="WinBody" type="Label" parent="WinPanel/WinVBox"]
+layout_mode = 2
+text = "Alex reached the exit with whatever battery and ammo remained."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="WinRestartButton" type="Button" parent="WinPanel/WinVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Replay"
+
+[node name="WinMenuButton" type="Button" parent="WinPanel/WinVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Main Menu"

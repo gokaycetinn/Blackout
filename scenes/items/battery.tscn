@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/battery.gd" id="1"]
+
+[sub_resource type="CircleShape2D" id="1"]
+radius = 10.0
+
+[node name="Battery" type="Area2D"]
+collision_layer = 16
+collision_mask = 0
+script = ExtResource("1")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("1")
+
+[node name="Visual" type="Polygon2D" parent="."]
+color = Color(0.980392, 0.858824, 0.219608, 1)
+polygon = PackedVector2Array(-8, -12, 8, -12, 8, 12, -8, 12)
