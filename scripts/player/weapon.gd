@@ -3,6 +3,7 @@ extends Node2D
 @export var cooldown: float = 1.2
 @export var bullet_range: float = 420.0
 @export var damage: int = 1
+@export var spread_degrees: float = 1.75
 
 @onready var muzzle_flash: PointLight2D = $MuzzleFlash
 
@@ -41,13 +42,35 @@ func try_fire() -> bool:
 	GameManager.emit_gunshot(global_position)
 
 	var origin := global_position
-	var direction := (get_global_mouse_position() - origin).normalized()
+	var aim_vector := get_global_mouse_position() - origin
+	var direction := aim_vector.normalized() if aim_vector.length_squared() > 0.001 else Vector2.RIGHT.rotated(global_rotation)
+	direction = direction.rotated(deg_to_rad(randf_range(-spread_degrees, spread_degrees)))
 	var query := PhysicsRayQueryParameters2D.create(origin, origin + direction * bullet_range)
 	query.exclude = [get_parent()]
 	query.collision_mask = 1 | 4
 
 	var hit := get_world_2d().direct_space_state.intersect_ray(query)
+	var end_point := origin + direction * bullet_range
 	if not hit.is_empty() and hit.collider and hit.collider.has_method("apply_damage"):
+		end_point = hit.position
 		hit.collider.apply_damage(damage, direction)
+	elif not hit.is_empty():
+		end_point = hit.position
+
+	_spawn_tracer(origin, end_point)
 
 	return true
+
+
+func _spawn_tracer(start_point: Vector2, end_point: Vector2) -> void:
+	var tracer := Line2D.new()
+	tracer.top_level = true
+	tracer.z_index = 12
+	tracer.default_color = Color(1.0, 0.72, 0.38, 0.9)
+	tracer.width = 2.4
+	tracer.points = PackedVector2Array([start_point, end_point])
+	get_tree().current_scene.add_child(tracer)
+
+	var tween := create_tween()
+	tween.tween_property(tracer, "modulate:a", 0.0, 0.08)
+	tween.finished.connect(tracer.queue_free)

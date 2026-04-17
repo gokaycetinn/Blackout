@@ -6,7 +6,8 @@ enum State {
 	SUSPICIOUS,
 	INVESTIGATING,
 	CHASING,
-	SEARCHING
+	SEARCHING,
+	ATTACK
 }
 
 
@@ -24,5 +25,7 @@ static func state_to_string(state: int) -> String:
 			return "CHASING"
 		State.SEARCHING:
 			return "SEARCHING"
+		State.ATTACK:
+			return "ATTACK"
 		_:
 			return "UNKNOWN"

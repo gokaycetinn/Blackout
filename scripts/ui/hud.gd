@@ -2,9 +2,11 @@ extends CanvasLayer
 
 @onready var battery_bar: ProgressBar = %BatteryBar
 @onready var ammo_value: Label = %AmmoValue
+@onready var detection_label: Label = %DetectionLabel
 @onready var stealth_value: Label = %StealthValue
 @onready var prompt_label: Label = %PromptLabel
 @onready var warning_rect: ColorRect = %DetectionWarning
+@onready var crosshair: Control = %Crosshair
 @onready var pause_panel: PanelContainer = %PausePanel
 @onready var fail_panel: PanelContainer = %FailPanel
 @onready var win_panel: PanelContainer = %WinPanel
@@ -51,6 +53,9 @@ func _process(_delta: float) -> void:
 	else:
 		stealth_value.text = "Exposed"
 
+	if crosshair:
+		crosshair.position = get_viewport().get_mouse_position()
+
 
 func _on_battery_changed(value: float) -> void:
 	battery_bar.value = value
@@ -68,6 +73,12 @@ func _on_ammo_changed(value: int) -> void:
 
 func _on_detection_changed(value: float) -> void:
 	warning_rect.modulate.a = clampf(value / 100.0, 0.0, 0.45)
+	if value >= 90.0:
+		detection_label.text = "LOCKED"
+	elif value >= 45.0:
+		detection_label.text = "SEEN"
+	else:
+		detection_label.text = "CLEAR"
 
 
 func _on_prompt_changed(text: String) -> void:

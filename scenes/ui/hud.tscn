@@ -6,6 +6,15 @@
 script = ExtResource("1")
 layer = 1
 
+[node name="Vignette" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.0588235, 0.0117647, 0.0117647, 0.247059)
+
 [node name="DetectionWarning" type="ColorRect" parent="."]
 unique_name_in_owner = true
 anchors_preset = 15
@@ -20,47 +29,56 @@ color = Color(0.901961, 0.0980392, 0.0980392, 0.168627)
 anchors_preset = 1
 anchor_right = 0.0
 anchor_bottom = 0.0
-offset_left = 24.0
-offset_top = 24.0
-offset_right = 324.0
-offset_bottom = 160.0
+offset_left = 20.0
+offset_top = 18.0
+offset_right = 380.0
+offset_bottom = 182.0
 
-[node name="TopLeftVBox" type="VBoxContainer" parent="TopLeft"]
+[node name="TopLeftPanel" type="PanelContainer" parent="TopLeft"]
+layout_mode = 2
+
+[node name="TopLeftVBox" type="VBoxContainer" parent="TopLeft/TopLeftPanel"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="BatteryLabel" type="Label" parent="TopLeft/TopLeftVBox"]
+[node name="BatteryLabel" type="Label" parent="TopLeft/TopLeftPanel/TopLeftVBox"]
 layout_mode = 2
 text = "BATTERY"
 
-[node name="BatteryBar" type="ProgressBar" parent="TopLeft/TopLeftVBox"]
+[node name="BatteryBar" type="ProgressBar" parent="TopLeft/TopLeftPanel/TopLeftVBox"]
 unique_name_in_owner = true
 layout_mode = 2
 max_value = 100.0
 value = 100.0
 show_percentage = false
 
-[node name="AmmoRow" type="HBoxContainer" parent="TopLeft/TopLeftVBox"]
+[node name="AmmoRow" type="HBoxContainer" parent="TopLeft/TopLeftPanel/TopLeftVBox"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="AmmoLabel" type="Label" parent="TopLeft/TopLeftVBox/AmmoRow"]
+[node name="AmmoLabel" type="Label" parent="TopLeft/TopLeftPanel/TopLeftVBox/AmmoRow"]
 layout_mode = 2
 text = "AMMO"
 
-[node name="AmmoValue" type="Label" parent="TopLeft/TopLeftVBox/AmmoRow"]
+[node name="AmmoValue" type="Label" parent="TopLeft/TopLeftPanel/TopLeftVBox/AmmoRow"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "x 6"
+
+[node name="DetectionLabel" type="Label" parent="TopLeft/TopLeftPanel/TopLeftVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.933333, 0.678431, 0.352941, 1)
+text = "CLEAR"
 
 [node name="TopRight" type="MarginContainer" parent="."]
 anchors_preset = 10
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -244.0
-offset_top = 24.0
-offset_right = -24.0
-offset_bottom = 94.0
+offset_left = -284.0
+offset_top = 18.0
+offset_right = -20.0
+offset_bottom = 112.0
 grow_horizontal = 0
 
 [node name="StealthBox" type="PanelContainer" parent="TopRight"]
@@ -71,6 +89,7 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Exposed"
 horizontal_alignment = 1
+theme_override_font_sizes/font_size = 18
 
 [node name="PromptLabel" type="Label" parent="."]
 unique_name_in_owner = true
@@ -78,15 +97,54 @@ anchors_preset = 14
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 500.0
-offset_top = -74.0
-offset_right = -500.0
-offset_bottom = -30.0
+offset_left = 450.0
+offset_top = -88.0
+offset_right = -450.0
+offset_bottom = -26.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_font_sizes/font_size = 18
 horizontal_alignment = 1
 visible = false
+theme_override_colors/font_color = Color(1, 0.945098, 0.823529, 1)
+
+[node name="Crosshair" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 0
+offset_left = 800.0
+offset_top = 450.0
+offset_right = 800.0
+offset_bottom = 450.0
+mouse_filter = 2
+
+[node name="CrosshairDot" type="ColorRect" parent="Crosshair"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -2.0
+offset_top = -2.0
+offset_right = 2.0
+offset_bottom = 2.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 0.74902, 0.447059, 0.95)
+
+[node name="CrosshairRing" type="Panel" parent="Crosshair"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+grow_horizontal = 2
+grow_vertical = 2
+self_modulate = Color(1, 1, 1, 0.15)
 
 [node name="PausePanel" type="PanelContainer" parent="."]
 unique_name_in_owner = true

@@ -12,6 +12,7 @@ const PlayerController = preload("res://scripts/player/player.gd")
 @export var detection_gain: float = 55.0
 @export var detection_decay: float = 22.0
 @export var search_duration: float = 4.0
+@export var attack_duration: float = 0.6
 
 @onready var body_visual: Polygon2D = $Body
 
@@ -23,6 +24,9 @@ var last_known_position: Vector2 = Vector2.ZERO
 var state_timer: float = 0.0
 var search_timer: float = 0.0
 var health: int = 2
+var hit_flash_timer: float = 0.0
+var attack_timer: float = 0.0
+var attack_offset: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
@@ -45,17 +49,20 @@ func _physics_process(delta: float) -> void:
 		if player == null:
 			return
 
+	hit_flash_timer = maxf(hit_flash_timer - delta, 0.0)
 	_update_detection(delta)
 	_update_state(delta)
 	move_and_slide()
+	_update_visual_feedback()
 
 	if state == EnemyStates.State.CHASING and global_position.distance_to(player.global_position) < 20.0 and not player.is_hidden_state():
-		GameManager.request_game_over("A creature caught Alex before the exit.")
+		_begin_attack()
 
 
 func apply_damage(amount: int, _direction: Vector2 = Vector2.ZERO) -> void:
 	health -= amount
 	detection_level = 100.0
+	hit_flash_timer = 0.18
 	if player:
 		last_known_position = player.global_position
 	_set_state(EnemyStates.State.CHASING)
@@ -66,6 +73,10 @@ func apply_damage(amount: int, _direction: Vector2 = Vector2.ZERO) -> void:
 
 func _update_detection(delta: float) -> void:
 	if player == null:
+		return
+
+	if state == EnemyStates.State.ATTACK:
+		GameManager.report_detection(self, 100.0)
 		return
 
 	var sees_player := _can_see_player()
@@ -147,6 +158,14 @@ func _update_state(delta: float) -> void:
 			_follow_target(sweep_target, search_speed)
 			if search_timer <= 0.0:
 				_set_state(EnemyStates.State.PATROL if not patrol_points.is_empty() else EnemyStates.State.IDLE)
+		EnemyStates.State.ATTACK:
+			velocity = Vector2.ZERO
+			if player:
+				global_position = player.global_position + attack_offset
+				_look_toward(player.global_position)
+			attack_timer -= delta
+			if attack_timer <= 0.0:
+				GameManager.request_game_over("The creature latched onto Alex in the dark.")
 
 
 func _follow_target(target: Vector2, speed: float) -> void:
@@ -184,6 +203,9 @@ func _set_state(new_state: int) -> void:
 		EnemyStates.State.SEARCHING:
 			search_timer = search_duration
 			body_visual.color = Color(0.95, 0.25, 0.4, 1.0)
+		EnemyStates.State.ATTACK:
+			attack_timer = attack_duration
+			body_visual.color = Color(1.0, 0.0, 0.24, 1.0)
 
 
 func _on_global_noise_emitted(position: Vector2, strength: float) -> void:
@@ -198,3 +220,22 @@ func _on_global_noise_emitted(position: Vector2, strength: float) -> void:
 
 func _exit_tree() -> void:
 	GameManager.clear_detection_source(self)
+
+
+func _begin_attack() -> void:
+	if state == EnemyStates.State.ATTACK or player == null:
+		return
+	attack_offset = (global_position - player.global_position).normalized() * 12.0
+	if attack_offset.length_squared() <= 0.01:
+		attack_offset = Vector2(10.0, -6.0)
+	_set_state(EnemyStates.State.ATTACK)
+
+
+func _update_visual_feedback() -> void:
+	if state == EnemyStates.State.ATTACK:
+		body_visual.scale = Vector2(1.15, 0.88)
+	elif hit_flash_timer > 0.0:
+		body_visual.color = Color(1.0, 0.85, 0.85, 1.0)
+		body_visual.scale = Vector2.ONE * 1.08
+	else:
+		body_visual.scale = Vector2.ONE
