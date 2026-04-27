@@ -1,7 +1,7 @@
 extends CharacterBody2D
 
 const PrototypeArt = preload("res://scripts/systems/prototype_art.gd")
-const PLAYER_SPRITESHEET = preload("res://assets/sci-fi-facility-asset-pack/the_kid_spritesheet.png")
+const PLAYER_SPRITESHEET = preload("res://assets/sci-fi-facility-asset-pack/inspector_spritesheet.png")
 
 @export var walk_speed: float = 130.0
 @export var run_speed: float = 210.0
