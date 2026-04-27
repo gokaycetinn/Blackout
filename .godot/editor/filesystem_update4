@@ -1,6 +1,17 @@
 res://scenes/objects/light_source.tscn
+<<<<<<< HEAD
 res://scripts/levels/level_01.gd
 res://scripts/enemies/creature.gd
 res://scripts/player/player.gd
 res://scripts/player/weapon.gd
 res://scripts/systems/audio_manager.gd
+=======
+res://scenes/player/player.tscn
+res://scripts/items/ammo.gd
+res://scripts/items/battery.gd
+res://scripts/objects/door_exit.gd
+res://scripts/objects/hiding_spot.gd
+res://scripts/objects/light_source.gd
+res://scripts/ui/menus.gd
+res://scripts/systems/marceles_lab_art.gd
+>>>>>>> 233f5edf50a5513c1d1a0f69d93539594278e8b3
