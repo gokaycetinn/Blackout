@@ -19,7 +19,7 @@ var is_hidden: bool = false
 var current_hiding_spot = null
 var _interaction_candidates: Array[Area2D] = []
 var _footstep_timer: float = 0.0
-var _base_body_scale: Vector2 = Vector2.ONE * 1.7
+var _base_body_scale: Vector2 = Vector2.ONE * 2.35
 
 # Invincibility frames after being hit
 var _invincible_timer: float = 0.0

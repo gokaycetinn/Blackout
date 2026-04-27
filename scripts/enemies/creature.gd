@@ -40,7 +40,7 @@ var _lunge_direction: Vector2 = Vector2.ZERO
 var _search_angle: float = 0.0
 var _idle_variance: float = 0.0
 var _close_contact_time: float = 0.0
-var _base_body_scale: Vector2 = Vector2.ONE * 1.65
+var _base_body_scale: Vector2 = Vector2.ONE * 2.25
 
 
 func _ready() -> void:
