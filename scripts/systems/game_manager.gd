@@ -14,13 +14,16 @@ signal pause_changed(paused: bool)
 signal global_noise_emitted(position: Vector2, strength: float)
 signal gunshot_fired(position: Vector2)
 signal screen_shake_requested(intensity: float)
+signal health_changed(value: int, max_value: int)
 
 const LEVEL_SCENE := "res://scenes/levels/level_01.tscn"
 const MENU_SCENE := "res://scenes/ui/main_menu.tscn"
 const BATTERY_MAX := 100.0
+const HEALTH_MAX := 3
 
 var battery_level: float = BATTERY_MAX
 var ammo_count: int = 6
+var player_health: int = HEALTH_MAX
 var is_flashlight_on: bool = false
 var is_game_paused: bool = false
 var is_hidden: bool = false
@@ -78,6 +81,7 @@ func register_player(player_node: PlayerController) -> void:
 	hide_state_changed.emit(is_hidden)
 	detection_changed.emit(current_detection)
 	interact_prompt_changed.emit(current_prompt)
+	health_changed.emit(player_health, HEALTH_MAX)
 
 
 func register_level(level_node: Node) -> void:
@@ -87,6 +91,7 @@ func register_level(level_node: Node) -> void:
 func reset_run() -> void:
 	battery_level = BATTERY_MAX
 	ammo_count = 6
+	player_health = HEALTH_MAX
 	is_flashlight_on = false
 	is_hidden = false
 	current_detection = 0.0
@@ -102,6 +107,7 @@ func reset_run() -> void:
 	detection_changed.emit(current_detection)
 	interact_prompt_changed.emit(current_prompt)
 	pause_changed.emit(false)
+	health_changed.emit(player_health, HEALTH_MAX)
 
 
 func set_flashlight_on(value: bool) -> bool:
@@ -183,6 +189,26 @@ func emit_gunshot(position: Vector2) -> void:
 func request_screen_shake(intensity: float) -> void:
 	screen_shake_requested.emit(clampf(intensity, 0.0, 2.0))
 
+
+func request_hit_stop(duration: float = 0.05, time_scale: float = 0.1) -> void:
+	Engine.time_scale = time_scale
+	await get_tree().create_timer(duration * time_scale).timeout
+	Engine.time_scale = 1.0
+
+
+
+func take_damage(amount: int = 1) -> void:
+	if run_state != "playing":
+		return
+	player_health = max(player_health - amount, 0)
+	health_changed.emit(player_health, HEALTH_MAX)
+	if player_health <= 0:
+		request_game_over("A creature tore through the darkness.")
+
+
+func add_health(amount: int = 1) -> void:
+	player_health = min(player_health + amount, HEALTH_MAX)
+	health_changed.emit(player_health, HEALTH_MAX)
 
 
 func request_game_over(reason: String = "The creatures found you.") -> void:

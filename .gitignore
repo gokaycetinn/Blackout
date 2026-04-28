@@ -1,0 +1,14 @@
+# Godot-specific ignores
+.godot/
+*.translation
+*.old
+*.bak
+*.tmp
+*.uid
+.mono/
+android/
+build/
+*.pck
+*.exe
+*.zip
+*.7z

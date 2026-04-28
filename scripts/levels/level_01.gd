@@ -7,6 +7,7 @@ const BATTERY_SCENE := preload("res://scenes/items/battery.tscn")
 const AMMO_SCENE := preload("res://scenes/items/ammo.tscn")
 const HIDING_SPOT_SCENE := preload("res://scenes/objects/hiding_spot.tscn")
 const EXIT_DOOR_SCENE := preload("res://scenes/objects/door_exit.tscn")
+const DOOR_SCENE := preload("res://scenes/objects/door.tscn")
 const LIGHT_SOURCE_SCENE := preload("res://scenes/objects/light_source.tscn")
 const FACILITY_COMPUTERS = preload("res://assets/sci-fi-facility-asset-pack/computer_spritesheet.png")
 const FACILITY_CRATES = preload("res://assets/sci-fi-facility-asset-pack/crates_spritesheet.png")
@@ -38,6 +39,10 @@ func _ready() -> void:
 	GameManager.reset_run()
 	GameManager.register_level(self)
 	GameManager.screen_shake_requested.connect(_on_screen_shake)
+	
+	# Start Background Music (User's custom track)
+	AudioManager.play_music("Sublevel_Maintenance.mp3", true)
+	
 	_setup_tile_layers()
 	_build_floor()
 	_build_walls()
@@ -46,6 +51,7 @@ func _ready() -> void:
 	_populate_environment()
 	_spawn_items()
 	_spawn_hiding_spots()
+	_spawn_doors()
 	_spawn_exit()
 	_spawn_enemies()
 	_camera_base_offset = camera.offset
@@ -234,6 +240,13 @@ func _spawn_hiding_spots() -> void:
 		var hiding_spot := HIDING_SPOT_SCENE.instantiate()
 		hiding_spot.global_position = spot_position
 		objects_root.add_child(hiding_spot)
+
+
+func _spawn_doors() -> void:
+	for door_pos in [Vector2(356, 490), Vector2(726, 340), Vector2(1036, 630)]:
+		var door := DOOR_SCENE.instantiate()
+		door.global_position = door_pos
+		objects_root.add_child(door)
 
 
 func _spawn_exit() -> void:

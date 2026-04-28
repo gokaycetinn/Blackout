@@ -3,23 +3,29 @@ extends CharacterBody2D
 const EnemyStates = preload("res://scripts/enemies/enemy_states.gd")
 const PlayerController = preload("res://scripts/player/player.gd")
 const ENEMY_SPRITESHEET = preload("res://assets/sci-fi-facility-asset-pack/guard_orange_spritesheet.png")
+const AmmoScene = preload("res://scenes/items/ammo.tscn")
+const BatteryScene = preload("res://scenes/items/battery.tscn")
+const MedkitScene = preload("res://scenes/items/medkit.tscn")
+const ProjectileScene = preload("res://scenes/objects/projectile.tscn")
 
 @export var patrol_points: Array[Vector2] = []
 @export var patrol_speed: float = 50.0
 @export var investigate_speed: float = 74.0
-@export var chase_speed: float = 138.0
-@export var search_speed: float = 65.0
-@export var base_view_distance: float = 156.0
+@export var chase_speed: float = 165.0
+@export var search_speed: float = 75.0
+@export var base_view_distance: float = 185.0
 @export var fov_degrees: float = 82.0
-@export var detection_gain: float = 34.0
-@export var detection_decay: float = 24.0
-@export var search_duration: float = 6.0
-@export var attack_range: float = 14.0
-@export var attack_cooldown: float = 2.1
-@export var lunge_speed: float = 275.0
-@export var lunge_duration: float = 0.18
+@export var detection_gain: float = 48.0
+@export var detection_decay: float = 20.0
+@export var search_duration: float = 7.0
 @export var idle_wait_time: float = 1.5
-@export var contact_attack_delay: float = 0.4
+# Ranged attack
+@export var shoot_range: float = 240.0
+@export var shoot_min_range: float = 80.0
+@export var shoot_cooldown: float = 1.6
+# Contact damage (temas hasari)
+@export var contact_range: float = 26.0
+@export var contact_cooldown: float = 1.2
 
 @onready var body_visual: Sprite2D = $Body
 @onready var fov_cone: Polygon2D = $FOVCone
@@ -33,13 +39,10 @@ var state_timer: float = 0.0
 var search_timer: float = 0.0
 var health: int = 2
 var hit_flash_timer: float = 0.0
-var _attack_cooldown_left: float = 0.0
-var _is_lunging: bool = false
-var _lunge_timer: float = 0.0
-var _lunge_direction: Vector2 = Vector2.ZERO
+var _shoot_cooldown_left: float = 0.0
+var _contact_cooldown_left: float = 0.0
 var _search_angle: float = 0.0
 var _idle_variance: float = 0.0
-var _close_contact_time: float = 0.0
 var _base_body_scale: Vector2 = Vector2.ONE * 2.25
 
 
@@ -85,47 +88,54 @@ func _physics_process(delta: float) -> void:
 			return
 
 	hit_flash_timer = maxf(hit_flash_timer - delta, 0.0)
-	_attack_cooldown_left = maxf(_attack_cooldown_left - delta, 0.0)
+	_shoot_cooldown_left = maxf(_shoot_cooldown_left - delta, 0.0)
+	_contact_cooldown_left = maxf(_contact_cooldown_left - delta, 0.0)
 
-	if _is_lunging:
-		_handle_lunge(delta)
-	else:
-		_update_detection(delta)
-		_update_state(delta)
-		move_and_slide()
+	_update_detection(delta)
+	_update_state(delta)
+	move_and_slide()
 
 	_update_visual_feedback()
 	_update_fov_cone()
 
 
-func _handle_lunge(delta: float) -> void:
-	_lunge_timer -= delta
-	velocity = _lunge_direction * lunge_speed
-	move_and_slide()
-
-	if _lunge_timer <= 0.0:
-		_is_lunging = false
-		velocity = Vector2.ZERO
-		if player and not player.is_hidden_state():
-			var dist := global_position.distance_to(player.global_position)
-			if dist < attack_range * 0.9:
-				player.apply_damage()
-		_attack_cooldown_left = attack_cooldown
-		_set_state(EnemyStates.State.CHASING)
 
 
 func apply_damage(amount: int, _direction: Vector2 = Vector2.ZERO) -> void:
 	health -= amount
 	detection_level = 100.0
 	hit_flash_timer = 0.22
+	GameManager.request_hit_stop(0.06, 0.1)
+	_spawn_blood_splatter()
+
 	if player:
 		last_known_position = player.global_position
 	if health <= 0:
 		GameManager.clear_detection_source(self)
 		_spawn_death_particles()
+		_drop_loot()
 		queue_free()
 		return
 	_set_state(EnemyStates.State.CHASING)
+
+func _spawn_blood_splatter() -> void:
+	for i in range(4):
+		var p := Polygon2D.new()
+		var s := randf_range(2.0, 6.0)
+		p.polygon = PackedVector2Array([
+			Vector2(-s, -s*0.5), Vector2(s, -s*0.5), Vector2(s*0.8, s), Vector2(-s*0.8, s)
+		])
+		p.color = Color(0.85, 0.15, 0.05, 0.8) # Red blood
+		p.global_position = global_position + Vector2(randf_range(-12.0, 12.0), randf_range(-12.0, 12.0))
+		p.rotation = randf_range(0.0, TAU)
+		p.z_index = -5 # Paint on the floor
+		
+		# Add to World node so it persists after enemy death
+		var world = get_tree().current_scene.get_node_or_null("World")
+		if world:
+			world.add_child(p)
+		else:
+			get_tree().current_scene.add_child(p)
 
 
 func _spawn_death_particles() -> void:
@@ -143,6 +153,29 @@ func _spawn_death_particles() -> void:
 		tw.tween_property(p, "position", p.position + Vector2(randf_range(-40.0, 40.0), randf_range(-40.0, 40.0)), 0.45)
 		tw.parallel().tween_property(p, "modulate:a", 0.0, 0.45)
 		tw.finished.connect(p.queue_free)
+
+
+func _drop_loot() -> void:
+	# Rastgele bir item düşür: %40 mermi, %30 batarya, %20 can, %10 hiçbir şey
+	var roll := randf()
+	var scene_to_spawn = null
+	if roll < 0.40:
+		scene_to_spawn = AmmoScene
+	elif roll < 0.70:
+		scene_to_spawn = BatteryScene
+	elif roll < 0.90:
+		scene_to_spawn = MedkitScene
+	if scene_to_spawn == null:
+		return
+	var item: Node2D = scene_to_spawn.instantiate() as Node2D
+	item.global_position = global_position + Vector2(randf_range(-12.0, 12.0), randf_range(-12.0, 12.0))
+	get_tree().current_scene.add_child(item)
+	# Drop animasyonu — item'ın kendi tween'i üzerinden çalıştır
+	item.modulate = Color(1, 1, 1, 0.0)
+	var spawn_offset := Vector2(randf_range(-20.0, 20.0), randf_range(-20.0, 20.0))
+	var tw: Tween = item.create_tween()
+	tw.tween_property(item, "modulate:a", 1.0, 0.35)
+	tw.parallel().tween_property(item, "position", item.position + spawn_offset, 0.35)
 
 
 func _update_detection(delta: float) -> void:
@@ -233,18 +266,33 @@ func _update_state(delta: float) -> void:
 		EnemyStates.State.CHASING:
 			if player:
 				last_known_position = player.global_position
-			_follow_target(last_known_position, chase_speed)
-			if player and not player.is_hidden_state() and _attack_cooldown_left <= 0.0:
+			if player and not player.is_hidden_state():
 				var dist := global_position.distance_to(player.global_position)
-				if dist < attack_range:
-					_close_contact_time += delta
+				# Temas hasarı: fiziksel temas
+				if dist < contact_range and _contact_cooldown_left <= 0.0:
+					player.apply_damage()
+					_contact_cooldown_left = contact_cooldown
+				# Uzak mesafe ateşi
+				if dist >= shoot_min_range and dist <= shoot_range and _shoot_cooldown_left <= 0.0:
+					_shoot_projectile()
+				# Hareket mantığı
+				if dist < shoot_min_range:
+					# Çok yakın — geri çekil
+					var away := (global_position - player.global_position).normalized()
+					velocity = away * chase_speed * 1.1
+					_look_toward(player.global_position)
+				elif dist <= shoot_range:
+					# Ateş menzilinde — yana kayarak pozisyon al
+					var strafe := (player.global_position - global_position).normalized().rotated(PI * 0.5)
+					velocity = strafe * patrol_speed * 2.0
+					_look_toward(player.global_position)
 				else:
-					_close_contact_time = maxf(_close_contact_time - delta * 2.0, 0.0)
-				if _close_contact_time >= contact_attack_delay:
-					_begin_lunge()
-			elif not _can_see_player() and global_position.distance_to(last_known_position) < 20.0 and detection_level < 45.0:
-				_close_contact_time = 0.0
-				_set_state(EnemyStates.State.SEARCHING)
+					# Çok uzak — yaklaş
+					_follow_target(last_known_position, chase_speed)
+			else:
+				_follow_target(last_known_position, chase_speed)
+				if not _can_see_player() and global_position.distance_to(last_known_position) < 20.0 and detection_level < 45.0:
+					_set_state(EnemyStates.State.SEARCHING)
 
 		EnemyStates.State.SEARCHING:
 			search_timer -= delta
@@ -260,17 +308,20 @@ func _search_duration_ref() -> float:
 	return search_duration
 
 
-func _begin_lunge() -> void:
+func _shoot_projectile() -> void:
 	if player == null:
 		return
-	_is_lunging = true
-	_close_contact_time = 0.0
-	_lunge_timer = lunge_duration
-	_lunge_direction = (player.global_position - global_position).normalized()
-	_look_toward(player.global_position)
-	var tw := create_tween()
-	tw.tween_property(body_visual, "scale", Vector2(_base_body_scale.x * 1.22, _base_body_scale.y * 0.84), 0.08)
-	tw.tween_property(body_visual, "scale", _base_body_scale, 0.14)
+	_shoot_cooldown_left = shoot_cooldown
+	var proj: Node2D = ProjectileScene.instantiate() as Node2D
+	var fire_dir := (player.global_position - global_position).normalized()
+	proj.global_position = global_position + fire_dir * 18.0
+	proj.set("direction", fire_dir)
+	proj.rotation = fire_dir.angle()
+	get_tree().current_scene.add_child(proj)
+	# Ateş geri tepme animasyonu
+	var tw: Tween = create_tween()
+	tw.tween_property(body_visual, "scale", _base_body_scale * 0.85, 0.07)
+	tw.tween_property(body_visual, "scale", _base_body_scale, 0.13)
 
 
 func _follow_target(target: Vector2, speed: float) -> void:
@@ -293,7 +344,6 @@ func _set_state(new_state: int) -> void:
 	if new_state == state:
 		return
 	state = new_state
-	_close_contact_time = 0.0
 	match state:
 		EnemyStates.State.IDLE:
 			state_timer = idle_wait_time + _idle_variance
@@ -339,8 +389,8 @@ func _update_fov_cone() -> void:
 
 
 func _update_visual_feedback() -> void:
-	if _is_lunging:
-		body_visual.modulate = Color(1.0, 0.3, 0.3, 1.0)
+	if _shoot_cooldown_left > shoot_cooldown - 0.15:
+		body_visual.modulate = Color(1.0, 0.55, 0.2, 1.0)
 	elif hit_flash_timer > 0.0:
 		body_visual.modulate = Color(1.0, 0.9, 0.9, 1.0)
 		body_visual.scale = _base_body_scale * 1.08

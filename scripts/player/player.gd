@@ -21,6 +21,12 @@ var _interaction_candidates: Array[Area2D] = []
 var _footstep_timer: float = 0.0
 var _base_body_scale: Vector2 = Vector2.ONE * 2.35
 
+# Dash mechanic
+var _is_dashing: bool = false
+var _dash_timer: float = 0.0
+var _dash_cooldown: float = 0.0
+var _dash_direction: Vector2 = Vector2.ZERO
+
 # Invincibility frames after being hit
 var _invincible_timer: float = 0.0
 const INVINCIBLE_DURATION := 1.2
@@ -48,6 +54,7 @@ func _physics_process(delta: float) -> void:
 
 	_invincible_timer = maxf(_invincible_timer - delta, 0.0)
 	_hurt_flash_timer = maxf(_hurt_flash_timer - delta, 0.0)
+	_dash_cooldown = maxf(_dash_cooldown - delta, 0.0)
 
 	# Aim at mouse
 	var mouse_world := get_global_mouse_position()
@@ -81,19 +88,37 @@ func _physics_process(delta: float) -> void:
 	var input_vector := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	var movement_mode := "idle"
 	var speed := walk_speed
-	if input_vector.length() > 0.0:
-		if is_crouching:
-			speed = crouch_speed
-			movement_mode = "crouch"
-		elif Input.is_action_pressed("run"):
-			speed = run_speed
-			movement_mode = "run"
-		else:
-			movement_mode = "walk"
 
-	velocity = input_vector * speed
+	# Dash Input (Spacebar)
+	if Input.is_physical_key_pressed(KEY_SPACE) and _dash_cooldown <= 0.0 and input_vector.length() > 0.0:
+		_is_dashing = true
+		_dash_timer = 0.12 # Reduced from 0.18
+		_dash_cooldown = 1.0
+		_dash_direction = input_vector.normalized()
+		_invincible_timer = 0.25 # i-frames during dash
+		GameManager.request_screen_shake(0.4)
+
+	if _is_dashing:
+		_dash_timer -= delta
+		velocity = _dash_direction * run_speed * 2.8 # Reduced from 3.5
+		_spawn_ghost_trail()
+		if _dash_timer <= 0.0:
+			_is_dashing = false
+	else:
+		if input_vector.length() > 0.0:
+			if is_crouching:
+				speed = crouch_speed
+				movement_mode = "crouch"
+			elif Input.is_action_pressed("run"):
+				speed = run_speed
+				movement_mode = "run"
+			else:
+				movement_mode = "walk"
+		velocity = input_vector * speed
+
 	move_and_slide()
-	_handle_footsteps(delta, movement_mode)
+	if not _is_dashing:
+		_handle_footsteps(delta, movement_mode)
 	_refresh_interact_prompt()
 	_update_hurt_visual()
 
@@ -179,9 +204,10 @@ func apply_damage() -> void:
 		return
 	_invincible_timer = INVINCIBLE_DURATION
 	_hurt_flash_timer = 0.35
-	# Screen shake via game manager
-	GameManager.request_screen_shake(1.0)
-	GameManager.request_game_over("A creature tore through the darkness.")
+	# Hit stop and screen shake via game manager
+	GameManager.request_hit_stop(0.08, 0.1)
+	GameManager.request_screen_shake(1.5)
+	GameManager.take_damage(1)
 
 
 func _use_interactable() -> void:
@@ -232,6 +258,21 @@ func _refresh_interact_prompt() -> void:
 		GameManager.set_interact_prompt(nearest.get_prompt(self))
 	else:
 		GameManager.set_interact_prompt("[E] Interact")
+
+
+func _spawn_ghost_trail() -> void:
+	var ghost := Sprite2D.new()
+	ghost.texture = body_visual.texture
+	ghost.global_position = body_visual.global_position
+	ghost.rotation = body_visual.rotation
+	ghost.scale = body_visual.scale
+	ghost.modulate = Color(0.4, 0.8, 1.0, 0.6)
+	ghost.z_index = body_visual.z_index - 1
+	get_tree().current_scene.add_child(ghost)
+
+	var tw := create_tween()
+	tw.tween_property(ghost, "modulate:a", 0.0, 0.25)
+	tw.finished.connect(ghost.queue_free)
 
 
 func _update_visual_state() -> void:

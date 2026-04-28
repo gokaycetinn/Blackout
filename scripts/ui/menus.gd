@@ -56,3 +56,14 @@ func _apply_button_theme() -> void:
 	quit_button.custom_minimum_size = Vector2(0.0, 46.0)
 
 	center_panel.modulate = Color(1.0, 1.0, 1.0, 0.97)
+	start_button.add_theme_font_size_override("font_size", 22)
+	start_button.custom_minimum_size = Vector2(0.0, 52.0)
+
+	quit_button.add_theme_stylebox_override("normal", secondary_style)
+	quit_button.add_theme_stylebox_override("hover", hover_style)
+	quit_button.add_theme_stylebox_override("pressed", pressed_style)
+	quit_button.add_theme_color_override("font_color", Color(0.87, 0.95, 1.0, 1.0))
+	quit_button.add_theme_font_size_override("font_size", 18)
+	quit_button.custom_minimum_size = Vector2(0.0, 46.0)
+
+	center_panel.modulate = Color(1.0, 1.0, 1.0, 0.97)

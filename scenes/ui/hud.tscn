@@ -31,8 +31,8 @@ anchor_right = 0.0
 anchor_bottom = 0.0
 offset_left = 20.0
 offset_top = 18.0
-offset_right = 380.0
-offset_bottom = 182.0
+offset_right = 400.0
+offset_bottom = 220.0
 
 [node name="TopLeftPanel" type="PanelContainer" parent="TopLeft"]
 unique_name_in_owner = true
@@ -40,15 +40,31 @@ layout_mode = 2
 
 [node name="TopLeftVBox" type="VBoxContainer" parent="TopLeft/TopLeftPanel"]
 layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HealthRow" type="HBoxContainer" parent="TopLeft/TopLeftPanel/TopLeftVBox"]
+layout_mode = 2
 theme_override_constants/separation = 8
+
+[node name="HealthLabel" type="Label" parent="TopLeft/TopLeftPanel/TopLeftVBox/HealthRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.35, 0.35, 1)
+text = "HP"
+
+[node name="HealthBar" type="HBoxContainer" parent="TopLeft/TopLeftPanel/TopLeftVBox/HealthRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
 
 [node name="BatteryLabel" type="Label" parent="TopLeft/TopLeftPanel/TopLeftVBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.92, 0.72, 1)
 text = "BATTERY"
 
 [node name="BatteryBar" type="ProgressBar" parent="TopLeft/TopLeftPanel/TopLeftVBox"]
 unique_name_in_owner = true
 layout_mode = 2
+custom_minimum_size = Vector2(0, 14)
 max_value = 100.0
 value = 100.0
 show_percentage = false
@@ -57,13 +73,15 @@ show_percentage = false
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="AmmoLabel" type="Label" parent="TopLeft/TopLeftPanel/TopLeftVBox/AmmoRow"]
+[node name="AmmoIcon" type="Label" parent="TopLeft/TopLeftPanel/TopLeftVBox/AmmoRow"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.72, 0.32, 1)
 text = "AMMO"
 
 [node name="AmmoValue" type="Label" parent="TopLeft/TopLeftPanel/TopLeftVBox/AmmoRow"]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.65, 1)
 text = "x 6"
 
 [node name="DetectionLabel" type="Label" parent="TopLeft/TopLeftPanel/TopLeftVBox"]
