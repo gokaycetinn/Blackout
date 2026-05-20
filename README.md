@@ -1,4 +1,4 @@
-# 🌑 BLACKOUT
+#  BLACKOUT
 
 <div align="center">
   <img src="assets/ui/main_menu_bg.png" alt="Blackout Main Menu" width="100%">
@@ -17,7 +17,7 @@
 
 ---
 
-## 🎮 Gameplay Demo (Video)
+##  Gameplay Demo (Video)
 
 Watch the atmospheric gameplay dynamics, tactical stealth mechanics, flashlight battery drainage, and intense boss encounter below:
 
@@ -28,12 +28,12 @@ Watch the atmospheric gameplay dynamics, tactical stealth mechanics, flashlight 
 
 ---
 
-## 🌟 Key Gameplay Systems
+##  Key Gameplay Systems
 
-### 🔦 Dynamic Flashlight & Battery Management
+###  Dynamic Flashlight & Battery Management
 The facility is shrouded in complete darkness. Your primary tool is a flashlight that runs on batteries. As power drains, the beam will flicker and grow dim. You must scan rooms carefully to locate spare batteries to survive the darkness.
 
-### 🤫 Stealth & Noise-Detection AI
+###  Stealth & Noise-Detection AI
 Enemies respond dynamically to the sounds you make and your visibility level:
 - **Crouch-walking (Ctrl):** Generates zero noise, lowering your visibility but reducing movement speed.
 - **Sprinting (Shift):** Allows rapid evasion but creates significant noise, instantly alerting nearby guards.
@@ -44,7 +44,7 @@ In order to unlock the heavy security gates and reach the exit, you must locate 
 
 ---
 
-## 👥 Characters & Enemies
+##  Characters & Enemies
 
 ### 🕵️‍♂️ The Inspector (Player Character)
 <table align="center">
@@ -64,7 +64,7 @@ In order to unlock the heavy security gates and reach the exit, you must locate 
   </tr>
 </table>
 
-### 🚨 Corrupted Facility Guards
+###  Corrupted Facility Guards
 <table align="center">
   <tr>
     <td width="30%" align="center">
@@ -81,7 +81,7 @@ In order to unlock the heavy security gates and reach the exit, you must locate 
   </tr>
 </table>
 
-### 🕷️ The Queen (Spider Boss)
+###  Spider Boss
 <table align="center">
   <tr>
     <td width="30%" align="center">
@@ -101,7 +101,7 @@ In order to unlock the heavy security gates and reach the exit, you must locate 
 
 ---
 
-## 🕷️ The Queen's Death Sequence
+##  Death Sequence
 
 To emphasize her mechanical defeat in Level 2, the Queen Spider Boss features a dramatic, multi-frame collapse and death animation, transitioning from her imposing active state to a curled, lifeless form:
 
@@ -127,7 +127,7 @@ To emphasize her mechanical defeat in Level 2, the Queen Spider Boss features a 
 
 ---
 
-## ⌨️ Controls
+##  Controls
 
 | Input | Action | Description |
 | :--- | :--- | :--- |
@@ -142,7 +142,7 @@ To emphasize her mechanical defeat in Level 2, the Queen Spider Boss features a 
 
 ---
 
-## 🔧 Installation & Setup
+##  Installation & Setup
 
 1. Install **Godot Engine 4.x** (version 4.6 or later recommended).
 2. Clone the repository to your local directory:
