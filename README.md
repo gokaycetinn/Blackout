@@ -17,17 +17,6 @@
 
 ---
 
-##  Gameplay Demo (Video)
-
-Watch the atmospheric gameplay dynamics, tactical stealth mechanics, flashlight battery drainage, and intense boss encounter below:
-
-<div align="center">
-  <video src="Blackout.mp4" width="100%" controls alt="Blackout Gameplay Demo"></video>
-  <p><i>(Once the demo video file <b>Blackout.mp4</b> is added to the repository, it will be playable directly in this section.)</i></p>
-</div>
-
----
-
 ##  Key Gameplay Systems
 
 ###  Dynamic Flashlight & Battery Management
